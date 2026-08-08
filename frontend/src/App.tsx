@@ -44,23 +44,34 @@ export default function App() {
   const [question, setQuestion] = useState("How many emails this batch were proposal or RFP related?");
   const [chat, setChat] = useState<ChatResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function refresh() {
+    setRefreshing(true);
     setError(null);
-    const results = await Promise.allSettled([getStats(), getTasks(), getSkipped()]);
-    const [statsResult, tasksResult, skippedResult] = results;
-    if (statsResult.status === "fulfilled") setStats(statsResult.value);
-    if (tasksResult.status === "fulfilled") setTasks(tasksResult.value);
-    if (skippedResult.status === "fulfilled") setSkipped(skippedResult.value);
+    try {
+      const results = await Promise.allSettled([getStats(), getTasks(), getSkipped()]);
+      const [statsResult, tasksResult, skippedResult] = results;
+      if (statsResult.status === "fulfilled") setStats(statsResult.value);
+      if (tasksResult.status === "fulfilled") setTasks(tasksResult.value);
+      if (skippedResult.status === "fulfilled") setSkipped(skippedResult.value);
 
-    const labels = ["Stats", "Tasks", "Skipped log"];
-    const failures = results.flatMap((result, index) =>
-      result.status === "rejected"
-        ? [`${labels[index]}: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`]
-        : []
-    );
-    if (failures.length) setError(failures.join(" | "));
+      const labels = ["Stats", "Tasks", "Skipped log"];
+      const failures = results.flatMap((result, index) =>
+        result.status === "rejected"
+          ? [`${labels[index]}: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`]
+          : []
+      );
+      if (failures.length) {
+        setError(failures.join(" | "));
+      } else {
+        setLastRefreshedAt(new Date());
+      }
+    } finally {
+      setRefreshing(false);
+    }
   }
 
   function preview() {
@@ -119,7 +130,15 @@ export default function App() {
       <header className="topbar">
         <div className="brandMark"><ShieldCheck size={24} /></div>
         <div><h1>Sales Inbox Task Router</h1><p>Paste emails, inspect the raw batch, route deterministically, then ask grounded questions.</p></div>
-        <button type="button" className="secondary" onClick={() => void refresh()} disabled={loading}><RefreshCw size={17} />Refresh</button>
+        <div className="refreshControl">
+          <button type="button" className="secondary" onClick={() => void refresh()} disabled={loading || refreshing}>
+            <RefreshCw size={17} className={refreshing ? "spin" : undefined} />
+            {refreshing ? "Refreshing..." : "Refresh dashboard"}
+          </button>
+          <span aria-live="polite">
+            {lastRefreshedAt ? `Updated ${lastRefreshedAt.toLocaleTimeString()}` : "Not refreshed yet"}
+          </span>
+        </div>
       </header>
       {error ? <div className="errorBanner">{error}</div> : null}
 

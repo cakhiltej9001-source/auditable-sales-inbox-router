@@ -8,6 +8,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
     response = await fetch(url, {
+      cache: "no-store",
       headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
       ...init
     });
