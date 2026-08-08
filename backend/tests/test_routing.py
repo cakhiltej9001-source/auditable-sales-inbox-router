@@ -1,89 +1,60 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from app.schemas import ExtractionResult
 from app.services.routing import route_extraction
 
 
-NOW = datetime(2026, 8, 8, 10, 0, tzinfo=timezone.utc)
+RECEIVED = datetime(2026, 8, 8, 10, 0, tzinfo=timezone.utc)
 
 
-def test_government_signal_overrides_other_rules():
-    extraction = ExtractionResult(
-        category="government",
-        is_actionable=True,
-        deal_value_inr=300_000,
-        due_at=datetime(2026, 8, 10, 9, 0, tzinfo=timezone.utc),
-        summary="PSU tender for LMS",
-        confidence=0.9,
-        signals=["psu", "tender"],
+def extraction(category: str, **overrides) -> ExtractionResult:
+    values = {"category": category, "is_actionable": True, "summary": "Actionable request", "confidence": 0.8}
+    values.update(overrides)
+    return ExtractionResult(**values)
+
+
+def test_government_override_beats_low_deal_value():
+    decision = route_extraction(
+        extraction("smb_enquiry", deal_value_inr=300_000, signals=["PSU tender"]), RECEIVED
     )
-
-    decision = route_extraction(extraction, now=NOW)
-
     assert decision.assignee_id == "u_aarti"
-    assert decision.priority == "high"
+    assert decision.category == "enterprise_rfp"
     assert decision.rule_id == "route.gov_psu"
 
 
-def test_enterprise_deal_routes_to_aarti():
-    extraction = ExtractionResult(
-        category="rfp",
-        is_actionable=True,
-        deal_value_inr=1_500_000,
-        due_at=None,
-        summary="Enterprise proposal",
-        confidence=0.8,
-    )
-
-    decision = route_extraction(extraction, now=NOW)
-
+def test_enterprise_deal_routes_to_aarti_and_no_deadline_is_low():
+    decision = route_extraction(extraction("enterprise_rfp", deal_value_inr=1_500_000), RECEIVED)
     assert decision.assignee_id == "u_aarti"
-    assert decision.rule_id == "route.enterprise"
+    assert decision.priority == "low"
 
 
-def test_finance_routes_to_divya():
-    extraction = ExtractionResult(
-        category="finance",
-        is_actionable=True,
-        summary="Invoice dispute",
-        confidence=0.8,
+def test_deadline_within_72_hours_is_high():
+    decision = route_extraction(extraction("smb_enquiry", due_date=date(2026, 8, 10)), RECEIVED)
+    assert decision.priority == "high"
+
+
+def test_later_deadline_is_medium():
+    decision = route_extraction(extraction("smb_enquiry", due_date=date(2026, 8, 20)), RECEIVED)
+    assert decision.priority == "medium"
+
+
+def test_business_category_routes():
+    assert route_extraction(extraction("finance"), RECEIVED).assignee_id == "u_divya"
+    assert route_extraction(extraction("marketing"), RECEIVED).assignee_id == "u_meera"
+    assert route_extraction(extraction("alliances"), RECEIVED).assignee_id == "u_karan"
+    assert route_extraction(extraction("smb_enquiry"), RECEIVED).assignee_id == "u_rohit"
+    assert route_extraction(extraction("triage", confidence=0.4), RECEIVED).assignee_id == "u_triage"
+
+
+def test_noise_is_skipped():
+    decision = route_extraction(
+        ExtractionResult(category="newsletter", is_actionable=False, summary="Weekly digest", confidence=0.9),
+        RECEIVED,
     )
-
-    assert route_extraction(extraction, now=NOW).assignee_id == "u_divya"
-
-
-def test_marketing_routes_to_meera():
-    extraction = ExtractionResult(
-        category="marketing",
-        is_actionable=True,
-        summary="Sponsorship request",
-        confidence=0.8,
-    )
-
-    assert route_extraction(extraction, now=NOW).assignee_id == "u_meera"
-
-
-def test_alliances_routes_to_karan():
-    extraction = ExtractionResult(
-        category="alliances",
-        is_actionable=True,
-        summary="Channel partner request",
-        confidence=0.8,
-    )
-
-    assert route_extraction(extraction, now=NOW).assignee_id == "u_karan"
-
-
-def test_newsletter_is_skipped():
-    extraction = ExtractionResult(
-        category="newsletter",
-        is_actionable=False,
-        summary="Weekly digest",
-        confidence=0.9,
-    )
-
-    decision = route_extraction(extraction, now=NOW)
-
     assert decision.should_skip is True
     assert decision.skip_type == "newsletter"
 
+
+def test_overdue_finance_is_high_without_due_date():
+    decision = route_extraction(extraction("finance", signals=["overdue"]), RECEIVED)
+    assert decision.priority == "high"
