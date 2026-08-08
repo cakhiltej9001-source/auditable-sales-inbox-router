@@ -1,91 +1,1382 @@
 [
   {
-    "name": "psu_tender",
+    "name": "enterprise_rfp_1",
     "email": {
-      "source_email_id": "eval-001",
+      "email_id": "eval-001",
       "thread_id": "eval-thread-001",
-      "from_email": "procurement@bharatpsu.gov.in",
-      "subject": "Urgent PSU LMS tender",
-      "body": "Please submit proposal for a public sector LMS tender. Budget INR 25L. Deadline 2026-08-10."
+      "message_index": 0,
+      "from_name": "Sender 1",
+      "from_email": "sender1@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Enterprise RFP",
+      "body": "Please submit the RFP proposal. Budget INR 18L.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
     },
-    "expected": {"status": "created", "assignee_id": "u_aarti", "priority": "high"}
+    "expected": {
+      "status": "created",
+      "category": "enterprise_rfp",
+      "assignee_id": "u_aarti",
+      "priority": "low"
+    }
   },
   {
-    "name": "enterprise_rfp",
+    "name": "enterprise_rfp_2",
     "email": {
-      "source_email_id": "eval-002",
+      "email_id": "eval-002",
       "thread_id": "eval-thread-002",
-      "from_email": "learning@enterprise.com",
-      "subject": "RFP for employee training platform",
-      "body": "We need a proposal for 9000 employees. Budget INR 18L."
+      "message_index": 0,
+      "from_name": "Sender 2",
+      "from_email": "sender2@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Government PSU tender",
+      "body": "Please respond to this PSU tender. Budget INR 16L.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
     },
-    "expected": {"status": "created", "assignee_id": "u_aarti", "priority": "normal"}
+    "expected": {
+      "status": "created",
+      "category": "enterprise_rfp",
+      "assignee_id": "u_aarti",
+      "priority": "low"
+    }
   },
   {
-    "name": "finance_invoice",
+    "name": "enterprise_rfp_3",
     "email": {
-      "source_email_id": "eval-003",
+      "email_id": "eval-003",
       "thread_id": "eval-thread-003",
-      "from_email": "accounts@client.com",
-      "subject": "Invoice mismatch",
-      "body": "The invoice amount and purchase order do not match. Please resolve billing."
+      "message_index": 0,
+      "from_name": "Sender 3",
+      "from_email": "sender3@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Enterprise RFP",
+      "body": "Please submit the RFP proposal. Budget INR 20L.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
     },
-    "expected": {"status": "created", "assignee_id": "u_divya", "priority": "normal"}
+    "expected": {
+      "status": "created",
+      "category": "enterprise_rfp",
+      "assignee_id": "u_aarti",
+      "priority": "low"
+    }
   },
   {
-    "name": "marketing_sponsorship",
+    "name": "enterprise_rfp_4",
     "email": {
-      "source_email_id": "eval-004",
+      "email_id": "eval-004",
       "thread_id": "eval-thread-004",
-      "from_email": "events@brand.com",
-      "subject": "Sponsorship for HR summit",
-      "body": "Can your team sponsor our HR summit and campaign next month?"
+      "message_index": 0,
+      "from_name": "Sender 4",
+      "from_email": "sender4@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Government PSU tender",
+      "body": "Please respond to this PSU tender. Budget INR 18L.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
     },
-    "expected": {"status": "created", "assignee_id": "u_meera", "priority": "normal"}
+    "expected": {
+      "status": "created",
+      "category": "enterprise_rfp",
+      "assignee_id": "u_aarti",
+      "priority": "low"
+    }
   },
   {
-    "name": "alliance_partner",
+    "name": "enterprise_rfp_5",
     "email": {
-      "source_email_id": "eval-005",
+      "email_id": "eval-005",
       "thread_id": "eval-thread-005",
-      "from_email": "alliances@partner.com",
-      "subject": "Channel partnership",
-      "body": "We want to discuss reseller partnership for your learning platform."
+      "message_index": 0,
+      "from_name": "Sender 5",
+      "from_email": "sender5@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Enterprise RFP",
+      "body": "Please submit the RFP proposal. Budget INR 22L.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
     },
-    "expected": {"status": "created", "assignee_id": "u_karan", "priority": "normal"}
+    "expected": {
+      "status": "created",
+      "category": "enterprise_rfp",
+      "assignee_id": "u_aarti",
+      "priority": "low"
+    }
   },
   {
-    "name": "smb_quote",
+    "name": "enterprise_rfp_6",
     "email": {
-      "source_email_id": "eval-006",
+      "email_id": "eval-006",
       "thread_id": "eval-thread-006",
-      "from_email": "founder@smallco.com",
-      "subject": "Need quote",
-      "body": "Please send a quote for our 80 person team. Budget INR 4L."
+      "message_index": 0,
+      "from_name": "Sender 6",
+      "from_email": "sender6@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Government PSU tender",
+      "body": "Please respond to this PSU tender. Budget INR 20L.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
     },
-    "expected": {"status": "created", "assignee_id": "u_rohit", "priority": "normal"}
+    "expected": {
+      "status": "created",
+      "category": "enterprise_rfp",
+      "assignee_id": "u_aarti",
+      "priority": "low"
+    }
   },
   {
-    "name": "ooo",
+    "name": "enterprise_rfp_7",
     "email": {
-      "source_email_id": "eval-007",
+      "email_id": "eval-007",
       "thread_id": "eval-thread-007",
-      "from_email": "person@example.com",
-      "subject": "Out of office",
-      "body": "Automatic reply: I am out of office this week."
+      "message_index": 0,
+      "from_name": "Sender 7",
+      "from_email": "sender7@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Enterprise RFP",
+      "body": "Please submit the RFP proposal. Budget INR 24L.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
     },
-    "expected": {"status": "skipped", "assignee_id": null, "priority": null}
+    "expected": {
+      "status": "created",
+      "category": "enterprise_rfp",
+      "assignee_id": "u_aarti",
+      "priority": "low"
+    }
   },
   {
-    "name": "newsletter",
+    "name": "enterprise_rfp_8",
     "email": {
-      "source_email_id": "eval-008",
+      "email_id": "eval-008",
       "thread_id": "eval-thread-008",
-      "from_email": "news@vendor.com",
-      "subject": "Weekly digest",
-      "body": "Here is our weekly newsletter. Unsubscribe here."
+      "message_index": 0,
+      "from_name": "Sender 8",
+      "from_email": "sender8@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Government PSU tender",
+      "body": "Please respond to this PSU tender. Budget INR 22L.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
     },
-    "expected": {"status": "skipped", "assignee_id": null, "priority": null}
+    "expected": {
+      "status": "created",
+      "category": "enterprise_rfp",
+      "assignee_id": "u_aarti",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "smb_enquiry_9",
+    "email": {
+      "email_id": "eval-009",
+      "thread_id": "eval-thread-009",
+      "message_index": 0,
+      "from_name": "Sender 9",
+      "from_email": "sender9@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Pricing quote",
+      "body": "Please send a pricing quote. Budget INR 4L.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "smb_enquiry",
+      "assignee_id": "u_rohit",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "smb_enquiry_10",
+    "email": {
+      "email_id": "eval-010",
+      "thread_id": "eval-thread-010",
+      "message_index": 0,
+      "from_name": "Sender 10",
+      "from_email": "sender10@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Product demo request",
+      "body": "Could you schedule a demo for our team? Budget INR 4L.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "smb_enquiry",
+      "assignee_id": "u_rohit",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "smb_enquiry_11",
+    "email": {
+      "email_id": "eval-011",
+      "thread_id": "eval-thread-011",
+      "message_index": 0,
+      "from_name": "Sender 11",
+      "from_email": "sender11@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Pricing quote",
+      "body": "Please send a pricing quote. Budget INR 6L.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "smb_enquiry",
+      "assignee_id": "u_rohit",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "smb_enquiry_12",
+    "email": {
+      "email_id": "eval-012",
+      "thread_id": "eval-thread-012",
+      "message_index": 0,
+      "from_name": "Sender 12",
+      "from_email": "sender12@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Product demo request",
+      "body": "Could you schedule a demo for our team? Budget INR 6L.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "smb_enquiry",
+      "assignee_id": "u_rohit",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "smb_enquiry_13",
+    "email": {
+      "email_id": "eval-013",
+      "thread_id": "eval-thread-013",
+      "message_index": 0,
+      "from_name": "Sender 13",
+      "from_email": "sender13@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Pricing quote",
+      "body": "Please send a pricing quote. Budget INR 8L.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "smb_enquiry",
+      "assignee_id": "u_rohit",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "smb_enquiry_14",
+    "email": {
+      "email_id": "eval-014",
+      "thread_id": "eval-thread-014",
+      "message_index": 0,
+      "from_name": "Sender 14",
+      "from_email": "sender14@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Product demo request",
+      "body": "Could you schedule a demo for our team? Budget INR 3L.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "smb_enquiry",
+      "assignee_id": "u_rohit",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "smb_enquiry_15",
+    "email": {
+      "email_id": "eval-015",
+      "thread_id": "eval-thread-015",
+      "message_index": 0,
+      "from_name": "Sender 15",
+      "from_email": "sender15@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Pricing quote",
+      "body": "Please send a pricing quote. Budget INR 5L.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "smb_enquiry",
+      "assignee_id": "u_rohit",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "smb_enquiry_16",
+    "email": {
+      "email_id": "eval-016",
+      "thread_id": "eval-thread-016",
+      "message_index": 0,
+      "from_name": "Sender 16",
+      "from_email": "sender16@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Product demo request",
+      "body": "Could you schedule a demo for our team? Budget INR 5L.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "smb_enquiry",
+      "assignee_id": "u_rohit",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "marketing_17",
+    "email": {
+      "email_id": "eval-017",
+      "thread_id": "eval-thread-017",
+      "message_index": 0,
+      "from_name": "Sender 17",
+      "from_email": "sender17@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Webinar campaign",
+      "body": "Please discuss a joint webinar campaign.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "marketing",
+      "assignee_id": "u_meera",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "marketing_18",
+    "email": {
+      "email_id": "eval-018",
+      "thread_id": "eval-thread-018",
+      "message_index": 0,
+      "from_name": "Sender 18",
+      "from_email": "sender18@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Conference sponsorship",
+      "body": "Would you sponsor our industry conference?",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "marketing",
+      "assignee_id": "u_meera",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "marketing_19",
+    "email": {
+      "email_id": "eval-019",
+      "thread_id": "eval-thread-019",
+      "message_index": 0,
+      "from_name": "Sender 19",
+      "from_email": "sender19@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Webinar campaign",
+      "body": "Please discuss a joint webinar campaign.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "marketing",
+      "assignee_id": "u_meera",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "marketing_20",
+    "email": {
+      "email_id": "eval-020",
+      "thread_id": "eval-thread-020",
+      "message_index": 0,
+      "from_name": "Sender 20",
+      "from_email": "sender20@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Conference sponsorship",
+      "body": "Would you sponsor our industry conference?",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "marketing",
+      "assignee_id": "u_meera",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "marketing_21",
+    "email": {
+      "email_id": "eval-021",
+      "thread_id": "eval-thread-021",
+      "message_index": 0,
+      "from_name": "Sender 21",
+      "from_email": "sender21@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Webinar campaign",
+      "body": "Please discuss a joint webinar campaign.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "marketing",
+      "assignee_id": "u_meera",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "marketing_22",
+    "email": {
+      "email_id": "eval-022",
+      "thread_id": "eval-thread-022",
+      "message_index": 0,
+      "from_name": "Sender 22",
+      "from_email": "sender22@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Conference sponsorship",
+      "body": "Would you sponsor our industry conference?",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "marketing",
+      "assignee_id": "u_meera",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "marketing_23",
+    "email": {
+      "email_id": "eval-023",
+      "thread_id": "eval-thread-023",
+      "message_index": 0,
+      "from_name": "Sender 23",
+      "from_email": "sender23@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Webinar campaign",
+      "body": "Please discuss a joint webinar campaign.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "marketing",
+      "assignee_id": "u_meera",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "marketing_24",
+    "email": {
+      "email_id": "eval-024",
+      "thread_id": "eval-thread-024",
+      "message_index": 0,
+      "from_name": "Sender 24",
+      "from_email": "sender24@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Conference sponsorship",
+      "body": "Would you sponsor our industry conference?",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "marketing",
+      "assignee_id": "u_meera",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "alliances_25",
+    "email": {
+      "email_id": "eval-025",
+      "thread_id": "eval-thread-025",
+      "message_index": 0,
+      "from_name": "Sender 25",
+      "from_email": "sender25@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Technology integration",
+      "body": "Please discuss a technology integration partnership.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "alliances",
+      "assignee_id": "u_karan",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "alliances_26",
+    "email": {
+      "email_id": "eval-026",
+      "thread_id": "eval-thread-026",
+      "message_index": 0,
+      "from_name": "Sender 26",
+      "from_email": "sender26@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Reseller partnership",
+      "body": "We would like to discuss a reseller channel partnership.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "alliances",
+      "assignee_id": "u_karan",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "alliances_27",
+    "email": {
+      "email_id": "eval-027",
+      "thread_id": "eval-thread-027",
+      "message_index": 0,
+      "from_name": "Sender 27",
+      "from_email": "sender27@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Technology integration",
+      "body": "Please discuss a technology integration partnership.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "alliances",
+      "assignee_id": "u_karan",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "alliances_28",
+    "email": {
+      "email_id": "eval-028",
+      "thread_id": "eval-thread-028",
+      "message_index": 0,
+      "from_name": "Sender 28",
+      "from_email": "sender28@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Reseller partnership",
+      "body": "We would like to discuss a reseller channel partnership.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "alliances",
+      "assignee_id": "u_karan",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "alliances_29",
+    "email": {
+      "email_id": "eval-029",
+      "thread_id": "eval-thread-029",
+      "message_index": 0,
+      "from_name": "Sender 29",
+      "from_email": "sender29@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Technology integration",
+      "body": "Please discuss a technology integration partnership.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "alliances",
+      "assignee_id": "u_karan",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "alliances_30",
+    "email": {
+      "email_id": "eval-030",
+      "thread_id": "eval-thread-030",
+      "message_index": 0,
+      "from_name": "Sender 30",
+      "from_email": "sender30@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Reseller partnership",
+      "body": "We would like to discuss a reseller channel partnership.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "alliances",
+      "assignee_id": "u_karan",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "alliances_31",
+    "email": {
+      "email_id": "eval-031",
+      "thread_id": "eval-thread-031",
+      "message_index": 0,
+      "from_name": "Sender 31",
+      "from_email": "sender31@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Technology integration",
+      "body": "Please discuss a technology integration partnership.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "alliances",
+      "assignee_id": "u_karan",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "alliances_32",
+    "email": {
+      "email_id": "eval-032",
+      "thread_id": "eval-thread-032",
+      "message_index": 0,
+      "from_name": "Sender 32",
+      "from_email": "sender32@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Reseller partnership",
+      "body": "We would like to discuss a reseller channel partnership.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "alliances",
+      "assignee_id": "u_karan",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "finance_33",
+    "email": {
+      "email_id": "eval-033",
+      "thread_id": "eval-thread-033",
+      "message_index": 0,
+      "from_name": "Sender 33",
+      "from_email": "sender33@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Invoice overdue",
+      "body": "Our invoice payment is overdue. Please resolve it.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "finance",
+      "assignee_id": "u_divya",
+      "priority": "high"
+    }
+  },
+  {
+    "name": "finance_34",
+    "email": {
+      "email_id": "eval-034",
+      "thread_id": "eval-thread-034",
+      "message_index": 0,
+      "from_name": "Sender 34",
+      "from_email": "sender34@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Invoice overdue",
+      "body": "Our invoice payment is overdue. Please resolve it.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "finance",
+      "assignee_id": "u_divya",
+      "priority": "high"
+    }
+  },
+  {
+    "name": "finance_35",
+    "email": {
+      "email_id": "eval-035",
+      "thread_id": "eval-thread-035",
+      "message_index": 0,
+      "from_name": "Sender 35",
+      "from_email": "sender35@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Billing issue",
+      "body": "Please help resolve this invoice and purchase order mismatch.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "finance",
+      "assignee_id": "u_divya",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "finance_36",
+    "email": {
+      "email_id": "eval-036",
+      "thread_id": "eval-thread-036",
+      "message_index": 0,
+      "from_name": "Sender 36",
+      "from_email": "sender36@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Billing issue",
+      "body": "Please help resolve this invoice and purchase order mismatch.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "finance",
+      "assignee_id": "u_divya",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "finance_37",
+    "email": {
+      "email_id": "eval-037",
+      "thread_id": "eval-thread-037",
+      "message_index": 0,
+      "from_name": "Sender 37",
+      "from_email": "sender37@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Billing issue",
+      "body": "Please help resolve this invoice and purchase order mismatch.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "finance",
+      "assignee_id": "u_divya",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "finance_38",
+    "email": {
+      "email_id": "eval-038",
+      "thread_id": "eval-thread-038",
+      "message_index": 0,
+      "from_name": "Sender 38",
+      "from_email": "sender38@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Billing issue",
+      "body": "Please help resolve this invoice and purchase order mismatch.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "finance",
+      "assignee_id": "u_divya",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "finance_39",
+    "email": {
+      "email_id": "eval-039",
+      "thread_id": "eval-thread-039",
+      "message_index": 0,
+      "from_name": "Sender 39",
+      "from_email": "sender39@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Billing issue",
+      "body": "Please help resolve this invoice and purchase order mismatch.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "finance",
+      "assignee_id": "u_divya",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "finance_40",
+    "email": {
+      "email_id": "eval-040",
+      "thread_id": "eval-thread-040",
+      "message_index": 0,
+      "from_name": "Sender 40",
+      "from_email": "sender40@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Billing issue",
+      "body": "Please help resolve this invoice and purchase order mismatch.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "finance",
+      "assignee_id": "u_divya",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "triage_41",
+    "email": {
+      "email_id": "eval-041",
+      "thread_id": "eval-thread-041",
+      "message_index": 0,
+      "from_name": "Sender 41",
+      "from_email": "sender41@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Two competing requests",
+      "body": "Please resolve our invoice and also discuss a reseller partnership.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "triage",
+      "assignee_id": "u_triage",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "triage_42",
+    "email": {
+      "email_id": "eval-042",
+      "thread_id": "eval-thread-042",
+      "message_index": 0,
+      "from_name": "Sender 42",
+      "from_email": "sender42@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Two competing requests",
+      "body": "Please resolve our invoice and also discuss a reseller partnership.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "triage",
+      "assignee_id": "u_triage",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "triage_43",
+    "email": {
+      "email_id": "eval-043",
+      "thread_id": "eval-thread-043",
+      "message_index": 0,
+      "from_name": "Sender 43",
+      "from_email": "sender43@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Two competing requests",
+      "body": "Please resolve our invoice and also discuss a reseller partnership.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "triage",
+      "assignee_id": "u_triage",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "triage_44",
+    "email": {
+      "email_id": "eval-044",
+      "thread_id": "eval-thread-044",
+      "message_index": 0,
+      "from_name": "Sender 44",
+      "from_email": "sender44@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Two competing requests",
+      "body": "Please resolve our invoice and also discuss a reseller partnership.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "triage",
+      "assignee_id": "u_triage",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "triage_45",
+    "email": {
+      "email_id": "eval-045",
+      "thread_id": "eval-thread-045",
+      "message_index": 0,
+      "from_name": "Sender 45",
+      "from_email": "sender45@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Two competing requests",
+      "body": "Please resolve our invoice and also discuss a reseller partnership.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "triage",
+      "assignee_id": "u_triage",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "triage_46",
+    "email": {
+      "email_id": "eval-046",
+      "thread_id": "eval-thread-046",
+      "message_index": 0,
+      "from_name": "Sender 46",
+      "from_email": "sender46@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Two competing requests",
+      "body": "Please resolve our invoice and also discuss a reseller partnership.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "triage",
+      "assignee_id": "u_triage",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "triage_47",
+    "email": {
+      "email_id": "eval-047",
+      "thread_id": "eval-thread-047",
+      "message_index": 0,
+      "from_name": "Sender 47",
+      "from_email": "sender47@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Two competing requests",
+      "body": "Please resolve our invoice and also discuss a reseller partnership.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "triage",
+      "assignee_id": "u_triage",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "triage_48",
+    "email": {
+      "email_id": "eval-048",
+      "thread_id": "eval-thread-048",
+      "message_index": 0,
+      "from_name": "Sender 48",
+      "from_email": "sender48@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Two competing requests",
+      "body": "Please resolve our invoice and also discuss a reseller partnership.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "created",
+      "category": "triage",
+      "assignee_id": "u_triage",
+      "priority": "low"
+    }
+  },
+  {
+    "name": "out_of_office_49",
+    "email": {
+      "email_id": "eval-049",
+      "thread_id": "eval-thread-049",
+      "message_index": 0,
+      "from_name": "Sender 49",
+      "from_email": "sender49@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Out of office",
+      "body": "Automatic reply: I am out of office this week.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "skipped",
+      "category": "out_of_office",
+      "assignee_id": null,
+      "priority": null
+    }
+  },
+  {
+    "name": "out_of_office_50",
+    "email": {
+      "email_id": "eval-050",
+      "thread_id": "eval-thread-050",
+      "message_index": 0,
+      "from_name": "Sender 50",
+      "from_email": "sender50@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Out of office",
+      "body": "Automatic reply: I am out of office this week.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "skipped",
+      "category": "out_of_office",
+      "assignee_id": null,
+      "priority": null
+    }
+  },
+  {
+    "name": "out_of_office_51",
+    "email": {
+      "email_id": "eval-051",
+      "thread_id": "eval-thread-051",
+      "message_index": 0,
+      "from_name": "Sender 51",
+      "from_email": "sender51@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Out of office",
+      "body": "Automatic reply: I am out of office this week.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "skipped",
+      "category": "out_of_office",
+      "assignee_id": null,
+      "priority": null
+    }
+  },
+  {
+    "name": "out_of_office_52",
+    "email": {
+      "email_id": "eval-052",
+      "thread_id": "eval-thread-052",
+      "message_index": 0,
+      "from_name": "Sender 52",
+      "from_email": "sender52@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Out of office",
+      "body": "Automatic reply: I am out of office this week.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "skipped",
+      "category": "out_of_office",
+      "assignee_id": null,
+      "priority": null
+    }
+  },
+  {
+    "name": "newsletter_53",
+    "email": {
+      "email_id": "eval-053",
+      "thread_id": "eval-thread-053",
+      "message_index": 0,
+      "from_name": "Sender 53",
+      "from_email": "sender53@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Weekly digest",
+      "body": "This is our weekly newsletter. Unsubscribe here.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "skipped",
+      "category": "newsletter",
+      "assignee_id": null,
+      "priority": null
+    }
+  },
+  {
+    "name": "newsletter_54",
+    "email": {
+      "email_id": "eval-054",
+      "thread_id": "eval-thread-054",
+      "message_index": 0,
+      "from_name": "Sender 54",
+      "from_email": "sender54@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Weekly digest",
+      "body": "This is our weekly newsletter. Unsubscribe here.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "skipped",
+      "category": "newsletter",
+      "assignee_id": null,
+      "priority": null
+    }
+  },
+  {
+    "name": "newsletter_55",
+    "email": {
+      "email_id": "eval-055",
+      "thread_id": "eval-thread-055",
+      "message_index": 0,
+      "from_name": "Sender 55",
+      "from_email": "sender55@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Weekly digest",
+      "body": "This is our weekly newsletter. Unsubscribe here.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "skipped",
+      "category": "newsletter",
+      "assignee_id": null,
+      "priority": null
+    }
+  },
+  {
+    "name": "newsletter_56",
+    "email": {
+      "email_id": "eval-056",
+      "thread_id": "eval-thread-056",
+      "message_index": 0,
+      "from_name": "Sender 56",
+      "from_email": "sender56@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "Weekly digest",
+      "body": "This is our weekly newsletter. Unsubscribe here.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "skipped",
+      "category": "newsletter",
+      "assignee_id": null,
+      "priority": null
+    }
+  },
+  {
+    "name": "vendor_spam_57",
+    "email": {
+      "email_id": "eval-057",
+      "thread_id": "eval-thread-057",
+      "message_index": 0,
+      "from_name": "Sender 57",
+      "from_email": "sender57@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "SEO backlinks",
+      "body": "Buy verified leads and SEO backlinks to rank #1.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "skipped",
+      "category": "vendor_spam",
+      "assignee_id": null,
+      "priority": null
+    }
+  },
+  {
+    "name": "vendor_spam_58",
+    "email": {
+      "email_id": "eval-058",
+      "thread_id": "eval-thread-058",
+      "message_index": 0,
+      "from_name": "Sender 58",
+      "from_email": "sender58@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "SEO backlinks",
+      "body": "Buy verified leads and SEO backlinks to rank #1.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "skipped",
+      "category": "vendor_spam",
+      "assignee_id": null,
+      "priority": null
+    }
+  },
+  {
+    "name": "vendor_spam_59",
+    "email": {
+      "email_id": "eval-059",
+      "thread_id": "eval-thread-059",
+      "message_index": 0,
+      "from_name": "Sender 59",
+      "from_email": "sender59@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "SEO backlinks",
+      "body": "Buy verified leads and SEO backlinks to rank #1.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "skipped",
+      "category": "vendor_spam",
+      "assignee_id": null,
+      "priority": null
+    }
+  },
+  {
+    "name": "vendor_spam_60",
+    "email": {
+      "email_id": "eval-060",
+      "thread_id": "eval-thread-060",
+      "message_index": 0,
+      "from_name": "Sender 60",
+      "from_email": "sender60@example.com",
+      "to": "sales@company.com",
+      "cc": [],
+      "subject": "SEO backlinks",
+      "body": "Buy verified leads and SEO backlinks to rank #1.",
+      "received_at": "2026-08-08T10:00:00Z",
+      "attachments": [],
+      "is_reply": false
+    },
+    "expected": {
+      "status": "skipped",
+      "category": "vendor_spam",
+      "assignee_id": null,
+      "priority": null
+    }
   }
 ]
-

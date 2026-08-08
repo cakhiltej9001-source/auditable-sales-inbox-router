@@ -9,15 +9,12 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///./sales_router.sqlite3"
     frontend_origin: str = "http://localhost:5173"
-    candidate_id: str = "local-candidate"
+    candidate_id: str = "cakhiltej9001@gmail.com"
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-2.5-flash"
-    task_api_base_url: str | None = None
-    task_api_token: str | None = None
-    task_api_timeout_seconds: int = Field(default=8, ge=1, le=60)
+    gemini_max_retries: int = Field(default=3, ge=1, le=5)
 
 
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-

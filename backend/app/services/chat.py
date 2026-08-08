@@ -1,47 +1,100 @@
+import json
+from collections import Counter
+
 from sqlmodel import Session, select
 
-from app.models import ProcessedEmail, ProcessingStatus, SkippedEmail, TaskRecord
+from app.models import ProcessedEmail, ProcessingStatus, TaskRecord
 
 
-def answer_question(session: Session, question: str) -> tuple[str, dict, str]:
-    q = question.lower()
-    if any(token in q for token in ["skip", "ignored", "noise"]):
-        rows = session.exec(select(SkippedEmail).order_by(SkippedEmail.created_at.desc()).limit(10)).all()
-        supporting = {
-            "skipped_count": len(rows),
-            "items": [
-                {"source_email_id": row.source_email_id, "skip_type": row.skip_type, "reason": row.reason}
-                for row in rows
-            ],
-        }
-        return f"{len(rows)} skipped emails are shown in the latest skipped log.", supporting, "latest_skipped"
+def answer_question(
+    session: Session,
+    candidate_id: str,
+    question: str,
+    email_ids: list[str] | None = None,
+) -> tuple[str, dict, str]:
+    q = question.lower().strip()
+    processed = session.exec(select(ProcessedEmail).where(ProcessedEmail.candidate_id == candidate_id.lower())).all()
+    if email_ids is not None:
+        allowed = set(email_ids)
+        processed = [row for row in processed if row.source_email_id in allowed]
+    task_ids = {row.task_record_id for row in processed if row.task_record_id is not None}
+    tasks = session.exec(select(TaskRecord).where(TaskRecord.candidate_id == candidate_id.lower())).all()
+    if email_ids is not None:
+        tasks = [task for task in tasks if task.id in task_ids]
 
-    if any(token in q for token in ["pipeline", "deal value", "revenue", "amount"]):
-        tasks = session.exec(select(TaskRecord)).all()
-        total = sum(task.deal_value_inr or 0 for task in tasks)
-        supporting = {"total_pipeline_inr": total, "task_count": len(tasks)}
-        return f"Tracked pipeline is INR {total:,} across {len(tasks)} tasks.", supporting, "pipeline_sum"
+    asks_to_send_email = "send" in q and "email" in q
+    if asks_to_send_email or any(token in q for token in ["delete", "assign it", "create a task"]):
+        return "I can answer questions about processed inbox data, but I cannot send emails or perform actions.", {}, "out_of_scope"
+
+    if "gst" in q and "refund" in q:
+        count = sum(1 for row in processed if "gst" in row.raw_email_json.lower() and "refund" in row.raw_email_json.lower())
+        return f"There are {count} emails about GST refunds in this batch.", {"gst_refund_count": count}, "gst_refund_count"
+
+    if "updated" in q and "thread" in q:
+        updates = Counter(row.thread_id for row in processed if row.status == ProcessingStatus.updated)
+        repeated = sorted(thread_id for thread_id, count in updates.items() if count > 1)
+        return (
+            f"{len(repeated)} threads were updated more than once.",
+            {"threads_updated_multiple_times": repeated},
+            "repeated_thread_updates",
+        )
+
+    if "spurious" in q:
+        spurious = sum(1 for row in processed if row.spurious_flagged)
+        total = len(processed)
+        rate = round(spurious / total, 3) if total else 0.0
+        data = {"spurious_count": spurious, "processed": total, "spurious_rate": rate}
+        return f"The spurious rate is {rate:.1%}: {spurious} flagged tasks across {total} processed emails.", data, "spurious_rate"
+
+    if "triage" in q:
+        matches = [task for task in tasks if task.category == "triage"]
+        items = [{"task_id": task.external_task_id, "reason": task.reasoning, "description": task.description} for task in matches]
+        data = {"triage_count": len(matches), "triage_task_ids": [item["task_id"] for item in items], "items": items}
+        return f"There are {len(matches)} tasks in triage. Each item includes the stored routing reason.", data, "triage_tasks"
+
+    if "high" in q and "confidence" in q:
+        matches = [task for task in tasks if task.priority == "high" and task.confidence < 0.6]
+        data = {"matches": [{"task_id": task.external_task_id, "confidence": task.confidence} for task in matches]}
+        return f"There are {len(matches)} high-priority tasks with confidence below 0.60.", data, "high_priority_low_confidence"
+
+    if "alliances" in q and any(token in q for token in ["reseller", "integration", "versus", "vs"]):
+        count = sum(1 for row in processed if row.category == "alliances" and row.status != ProcessingStatus.skipped)
+        return (
+            f"There are {count} alliances emails, but the stored schema does not reliably separate resellers from technology-integration partners.",
+            {"alliances": count},
+            "alliances_breakdown_unavailable",
+        )
+
+    if any(token in q for token in ["deal value", "pipeline", "open rfp", "total value"]):
+        rfps = [task for task in tasks if task.category == "enterprise_rfp" and task.status == "open"]
+        total = sum(task.deal_value_inr for task in rfps if task.deal_value_inr is not None)
+        missing = sum(1 for task in rfps if task.deal_value_inr is None)
+        data = {"total_deal_value_inr": total, "rfps_with_no_stated_value": missing}
+        return f"Open RFP value is INR {total:,}; {missing} RFP tasks have no stated value and were not treated as zero.", data, "open_rfp_value"
+
+    if "marketing" in q and any(token in q for token in ["spam", "versus", "vs"]):
+        marketing = sum(1 for row in processed if row.category == "marketing" and row.status != ProcessingStatus.skipped)
+        spam = sum(
+            1 for row in processed
+            if row.category == "vendor_spam" and any(token in row.raw_email_json.lower() for token in ["marketing", "seo", "leads", "campaign"])
+        )
+        data = {"marketing": marketing, "skipped_marketing_lookalike_spam": spam}
+        return f"{marketing} emails were routed as marketing; {spam} marketing-adjacent vendor spam emails were correctly skipped.", data, "marketing_vs_spam"
+
+    if any(token in q for token in ["proposal", "rfp related", "rfp-related"]):
+        count = sum(1 for row in processed if row.category == "enterprise_rfp" and row.status != ProcessingStatus.skipped)
+        return f"There are {count} proposal or enterprise-RFP-related emails in this batch.", {"enterprise_rfp": count}, "enterprise_rfp_count"
 
     if any(token in q for token in ["high priority", "urgent", "deadline"]):
-        tasks = session.exec(select(TaskRecord).where(TaskRecord.priority == "high")).all()
-        supporting = {
-            "high_priority_count": len(tasks),
-            "items": [{"task_id": task.external_task_id, "title": task.title, "assignee_id": task.assignee_id} for task in tasks],
-        }
-        return f"There are {len(tasks)} high-priority tasks.", supporting, "high_priority_tasks"
+        matches = [task for task in tasks if task.priority == "high"]
+        data = {"high_priority_count": len(matches), "items": [{"task_id": t.external_task_id, "title": t.title, "assignee_id": t.assignee_id} for t in matches]}
+        return f"There are {len(matches)} high-priority tasks.", data, "high_priority_tasks"
 
     if any(token in q for token in ["assignee", "owner", "assigned"]):
-        tasks = session.exec(select(TaskRecord)).all()
-        counts: dict[str, int] = {}
-        for task in tasks:
-            counts[task.assignee_id] = counts.get(task.assignee_id, 0) + 1
-        return "Tasks by assignee are based on persisted routed tasks.", {"by_assignee": counts}, "count_by_assignee"
+        counts = Counter(task.assignee_id for task in tasks)
+        return "Task counts by assignee come directly from persisted tasks.", {"by_assignee": dict(counts)}, "count_by_assignee"
 
-    processed = session.exec(select(ProcessedEmail)).all()
-    counts = {
-        "created": sum(1 for item in processed if item.status == ProcessingStatus.created),
-        "updated": sum(1 for item in processed if item.status == ProcessingStatus.updated),
-        "duplicates": sum(item.duplicate_count for item in processed),
-        "skipped": sum(1 for item in processed if item.status == ProcessingStatus.skipped),
-    }
-    return "Here is the current processing summary from stored audit rows.", counts, "processing_summary"
+    counts = Counter(row.category for row in processed)
+    statuses = Counter(row.status.value for row in processed)
+    data = {"processed": len(processed), "by_category": dict(counts), "by_status": dict(statuses)}
+    return "Here is the stored processing summary for this batch. Ask about RFPs, marketing versus spam, triage, priority, value, or updates for more detail.", data, "processing_summary"

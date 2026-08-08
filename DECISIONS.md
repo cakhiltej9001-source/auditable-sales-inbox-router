@@ -1,38 +1,31 @@
-# Decisions
+# Engineering Decisions
 
-## 1. Deterministic Routing Owns Final Assignment
+## 1. Gemini extracts facts; Python owns routing
 
-Gemini can extract category, deadline, amount, organization hints, and confidence. It cannot decide the final assignee or priority.
+Gemini may identify an explicit company, amount, deadline, and business intent through a narrow JSON schema. It never chooses `assignee_id` or `priority`; deterministic Python applies the published precedence. After transient Gemini failures the service retries up to three times with exponential backoff, then uses a conservative heuristic extractor so an email is not silently dropped.
 
-Reason: judges can inspect and test routing rules. Deterministic logic is easier to defend than hidden model behavior.
+With two more weeks, I would add a token-budgeted request queue, provider telemetry, circuit breaking, and recorded-model regression tests against redacted production-like messages.
 
-## 2. SQLite for Tests, PostgreSQL for Deployment
+## 2. Idempotency uses an immutable email identity
 
-The code uses SQLModel/SQLAlchemy and works with SQLite for fast local checks. `docker-compose.yml` uses PostgreSQL for deployment-like runs.
+`ProcessedEmail.source_email_id` is unique. A replay increments audit metadata and returns a duplicate result without another task write. Tasks also use a stable thread-derived ID during ingest, while direct `POST /tasks` checks candidate plus source email before inserting.
 
-Reason: hackathon teams need fast iteration, but the persistence model should still reflect production needs.
+With two more weeks, I would add PostgreSQL advisory locks or transactional upserts to make simultaneous delivery of the same message safe across multiple workers.
 
-## 3. Idempotency Is Local First
+## 3. Thread reconciliation preserves the original grader key
 
-`source_email_id` is unique locally. Replays return `duplicate` and do not call the Task API again.
+A new `email_id` on an existing candidate/thread updates the task and increments `update_count`. The task retains the original `source_email_id`, allowing Run 1 to remain alignable, while every reply is stored as its own audit row. Quoted old text is removed before extraction.
 
-Reason: the challenge brief states the shared Task API does not dedupe repeated POSTs.
+With two more weeks, I would store field-level change history and distinguish customer replies from internal forwards more explicitly.
 
-## 4. Thread Replies Patch Existing Tasks
+## 4. Chat is a constrained query layer, not text-to-SQL
 
-If a new email has a `thread_id` already associated with a task, the backend updates the task instead of creating a new one.
+The path is: question → allow-listed intent → SQLModel query/filter/group-by → `supporting_data` → deterministic answer text. Batch email IDs are part of the request scope. Zero and unknown are valid results, compound filters are explicit, and action requests are refused. Gemini is not allowed to calculate or replace numbers.
 
-Reason: sales inbox threads evolve. Duplicate task creation hurts operators and makes analytics unreliable.
+With two more weeks, I would formalize the intent grammar, add a read-only analytical view, and optionally let Gemini paraphrase a frozen result object under a schema without changing its values.
 
-## 5. Grounded Chat Uses Validated Query Intents
+## 5. Known limitation knowingly shipped
 
-The chat endpoint maps questions to a constrained query intent, queries the database, returns `supporting_data`, and only then asks Gemini to phrase the answer when configured.
+The fallback parser handles numeric INR forms and a narrow set of date formats, but it misses some word-number values (for example “ten lakhs”), informal deadlines such as “next working Friday,” and implicit company mentions. Returning null or medium/low confidence is safer than fabricating a value or date.
 
-Reason: free-form SQL generation is unnecessary and risky for this MVP.
-
-## 6. Local Task API Fallback
-
-When `TASK_API_BASE_URL` is unset, the backend creates stable mock task IDs.
-
-Reason: this keeps demos and tests working without secrets or external infrastructure.
-
+With two more weeks, I would add a locale-aware Indian currency/date parser, more Hinglish fixtures, and calibrated confidence based on held-out data rather than fixed heuristic bands.

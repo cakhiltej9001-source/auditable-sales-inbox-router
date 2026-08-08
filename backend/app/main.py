@@ -9,9 +9,12 @@ from app.core.database import init_db
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(title="Sales Inbox Task Router", version="0.1.0")
+    allowed_origins = [origin.strip().rstrip("/") for origin in settings.frontend_origin.split(",") if origin.strip()]
+    if "http://localhost:5173" not in allowed_origins:
+        allowed_origins.append("http://localhost:5173")
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[settings.frontend_origin, "http://localhost:5173"],
+        allow_origins=allowed_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -26,4 +29,3 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-

@@ -16,7 +16,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -110,6 +111,77 @@ td span,
   color: #7a2219;
   background: #fff0eb;
   border: 1px solid #f3c1b7;
+}
+
+.intakePanel,
+.rawPanel {
+  max-width: 1440px;
+  margin: 0 auto 20px;
+}
+
+.intakeBody {
+  padding: 16px;
+}
+
+.intakeBody textarea {
+  display: block;
+  width: 100%;
+  min-height: 250px;
+  resize: vertical;
+  border: 1px solid #cfd7d2;
+  border-radius: 6px;
+  padding: 12px;
+  color: #26372f;
+  background: #fbfcfa;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.inputActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.fileButton {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d8ddd4;
+  border-radius: 6px;
+  padding: 0 14px;
+  color: #1c342b;
+  background: #fff;
+  cursor: pointer;
+}
+
+.fileButton input {
+  display: none;
+}
+
+.rawTable {
+  max-height: 430px;
+}
+
+.rawTable th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.rawTable td:last-child {
+  min-width: 260px;
+  color: #41504a;
+}
+
+.resultBanner {
+  padding: 12px 16px;
+  color: #165b41;
+  background: #e8fff4;
+  border-top: 1px solid #b9dccb;
 }
 
 .metricsGrid {
@@ -300,6 +372,10 @@ td span {
   gap: 8px;
 }
 
+.chatHint {
+  margin-top: 14px;
+}
+
 .chatAnswer span {
   color: #66736c;
   font-size: 13px;
@@ -350,9 +426,9 @@ pre {
   }
 
   .actions,
-  .chatForm {
+  .chatForm,
+  .inputActions {
     display: grid;
     grid-template-columns: 1fr;
   }
 }
-
