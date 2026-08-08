@@ -8,7 +8,7 @@
 
 **Frontend:** https://auditable-sales-inbox-router-1.onrender.com
 
-An auditable sales-inbox agent. It extracts grounded facts with Gemini when configured, applies deterministic business rules, prevents replay duplicates, reconciles thread replies, persists every decision, and answers analytics questions only from stored data.
+An auditable sales-inbox agent : It extracts grounded facts with Gemini when configured, applies deterministic business rules, prevents replay duplicates, reconciles thread replies, persists every decision, and answers analytics questions only from stored data.
 
 ## Quick start — three commands
 
