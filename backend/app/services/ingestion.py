@@ -24,7 +24,10 @@ class IngestionService:
         candidate_id = candidate_id.lower()
         email = normalize_email(email)
         existing_email = self.session.exec(
-            select(ProcessedEmail).where(ProcessedEmail.source_email_id == email.email_id)
+            select(ProcessedEmail).where(
+                ProcessedEmail.candidate_id == candidate_id,
+                ProcessedEmail.source_email_id == email.email_id,
+            )
         ).first()
         if existing_email:
             existing_email.duplicate_count += 1

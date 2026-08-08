@@ -55,6 +55,57 @@ def _migrate_existing_database() -> None:
             for name, definition in columns.items():
                 if name not in existing:
                     connection.execute(text(f'ALTER TABLE {table} ADD COLUMN {name} {definition}'))
+        _normalize_legacy_rows(connection)
+        _configure_candidate_scoped_uniqueness(connection)
+
+
+def _normalize_legacy_rows(connection) -> None:
+    """Translate values written by the pre-contract release into exact grader enums."""
+    connection.execute(text("""
+        UPDATE taskrecord
+        SET category = CASE
+            WHEN category IN ('rfp', 'government') THEN 'enterprise_rfp'
+            WHEN category = 'smb' THEN 'smb_enquiry'
+            WHEN category IN ('enterprise_rfp', 'smb_enquiry', 'marketing', 'alliances', 'finance', 'triage') THEN category
+            ELSE 'triage'
+        END
+    """))
+    connection.execute(text("""
+        UPDATE taskrecord
+        SET priority = CASE
+            WHEN priority IN ('high', 'medium', 'low') THEN priority
+            ELSE 'low'
+        END
+    """))
+    connection.execute(text("""
+        UPDATE processedemail
+        SET category = CASE
+            WHEN category IN ('rfp', 'government') THEN 'enterprise_rfp'
+            WHEN category = 'smb' THEN 'smb_enquiry'
+            WHEN category = 'unknown' THEN 'triage'
+            ELSE category
+        END
+    """))
+
+
+def _configure_candidate_scoped_uniqueness(connection) -> None:
+    """Replace the first release's global email-id constraint on PostgreSQL."""
+    if engine.dialect.name != "postgresql":
+        return
+    connection.execute(text(
+        "ALTER TABLE processedemail DROP CONSTRAINT IF EXISTS processedemail_source_email_id_key"
+    ))
+    connection.execute(text(
+        "ALTER TABLE skippedemail DROP CONSTRAINT IF EXISTS skippedemail_source_email_id_key"
+    ))
+    connection.execute(text(
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_processed_candidate_source "
+        "ON processedemail (candidate_id, source_email_id)"
+    ))
+    connection.execute(text(
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_skipped_candidate_source "
+        "ON skippedemail (candidate_id, source_email_id)"
+    ))
 
 
 def get_session() -> Generator[Session, None, None]:

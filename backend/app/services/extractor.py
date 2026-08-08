@@ -29,6 +29,7 @@ class GeminiExtractor(Extractor):
 
         prompt = (
             "Extract only explicitly supported routing facts. Never choose an assignee or priority. "
+            "For replies, treat the unquoted current body as the newest intent; the Re: subject may describe an older request. "
             "Use enterprise_rfp for RFPs/tenders/deals above INR 10L; smb_enquiry for demos/product enquiries/deals at or below INR 10L; "
             "marketing, alliances, finance, triage, newsletter, out_of_office, vendor_spam, or not_actionable otherwise. "
             "Use null for unstated company, value, or due date. Invoice amounts are not deal values.\n\n"
@@ -54,7 +55,7 @@ class GeminiExtractor(Extractor):
 
 class HeuristicExtractor(Extractor):
     def extract(self, email: EmailIn) -> ExtractionResult:
-        text = f"{email.subject} {email.body}".lower()
+        full_text = f"{email.subject} {email.body}".lower()
         groups = {
             "finance": ["invoice", "payment", "billing", "refund", "purchase order", "gst", "vendor bill"],
             "marketing": ["sponsor", "sponsorship", "campaign", "webinar", "event booth", "conference", "media", "content collaboration", "pr opportunity"],
@@ -62,6 +63,15 @@ class HeuristicExtractor(Extractor):
             "enterprise_rfp": ["rfp", "rfi", "tender", "procurement"],
             "smb_enquiry": ["demo", "product enquiry", "product inquiry", "pricing", "quote", "trial"],
         }
+        body_text = email.body.lower()
+        body_has_explicit_intent = any(
+            token in body_text
+            for tokens in groups.values()
+            for token in tokens
+        )
+        # A reply subject often describes the old thread intent. When the fresh,
+        # unquoted body has a clear category, it must take precedence.
+        text = body_text if email.is_reply and body_has_explicit_intent else full_text
         government = any(token in text for token in ["government", "govt", "psu", "ministry", "public sector", "tender"])
         matches = [name for name, tokens in groups.items() if any(token in text for token in tokens)]
         deal_value = _extract_inr(text)
