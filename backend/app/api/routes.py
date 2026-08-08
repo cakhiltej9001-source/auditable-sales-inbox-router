@@ -258,8 +258,8 @@ def _task_api_out(task: TaskRecord) -> TaskApiOut:
         title=task.title,
         description=task.description,
         assignee_id=task.assignee_id,
-        category=task.category,
-        priority=task.priority,
+        category=_normalized_category(task.category),
+        priority=_normalized_priority(task.priority),
         due_date=task.due_date,
         deal_value_inr=task.deal_value_inr,
         company_name=task.company,
@@ -276,8 +276,8 @@ def _task_out(task: TaskRecord) -> TaskOut:
         thread_id=task.thread_id,
         source_email_id=task.source_email_id,
         assignee_id=task.assignee_id,
-        category=task.category,
-        priority=task.priority,
+        category=_normalized_category(task.category),
+        priority=_normalized_priority(task.priority),
         title=task.title,
         description=task.description,
         company_name=task.company,
@@ -289,3 +289,13 @@ def _task_out(task: TaskRecord) -> TaskOut:
         update_count=task.update_count,
         updated_at=task.updated_at,
     )
+
+
+def _normalized_category(value: str) -> str:
+    legacy = {"rfp": "enterprise_rfp", "government": "enterprise_rfp", "smb": "smb_enquiry"}
+    normalized = legacy.get(value, value)
+    return normalized if normalized in ENUMS["category"] else "triage"
+
+
+def _normalized_priority(value: str) -> str:
+    return value if value in ENUMS["priority"] else "low"

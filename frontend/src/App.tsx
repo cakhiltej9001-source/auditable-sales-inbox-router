@@ -10,32 +10,35 @@ const emptyStats: Stats = {
   by_assignee: {}, by_category: {}, by_priority: {}, by_run: {}, total_pipeline_inr: 0
 };
 
-const starterEmails: EmailInput[] = [
-  {
-    email_id: "sample-rfp-001", thread_id: "sample-thread-001", message_index: 0,
+function createStarterEmails(): EmailInput[] {
+  const stamp = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+  return [
+    {
+    email_id: `sample-rfp-${stamp}`, thread_id: `sample-thread-rfp-${stamp}`, message_index: 0,
     from_name: "Suresh Kulkarni", from_email: "suresh@meridiansteel.co.in", to: "sales@company.com", cc: [],
     subject: "RFP - Enterprise document management system", body: "Please submit a proposal. Budget INR 25L. Deadline 2026-08-10.",
     received_at: "2026-08-08T09:14:22+05:30", attachments: ["RFP_DMS_2026.pdf"], is_reply: false
   },
-  {
-    email_id: "sample-demo-002", thread_id: "sample-thread-002", message_index: 0,
+    {
+    email_id: `sample-demo-${stamp}`, thread_id: `sample-thread-demo-${stamp}`, message_index: 0,
     from_name: "Ankit Bose", from_email: "ankit@railyardlogistics.in", to: "sales@company.com", cc: [],
     subject: "Quick demo request", body: "Could you schedule a product demo for our 80-person team? Budget INR 4L.",
     received_at: "2026-08-08T11:02:00+05:30", attachments: [], is_reply: false
   },
-  {
-    email_id: "sample-news-003", thread_id: "sample-thread-003", message_index: 0,
+    {
+    email_id: `sample-news-${stamp}`, thread_id: `sample-thread-news-${stamp}`, message_index: 0,
     from_name: "Vendor Digest", from_email: "news@vendor.example", to: "sales@company.com", cc: [],
     subject: "Weekly digest", body: "Here is this week's newsletter. Unsubscribe at any time.",
     received_at: "2026-08-08T13:00:00+05:30", attachments: [], is_reply: false
-  }
-];
+    }
+  ];
+}
 
 export default function App() {
   const [stats, setStats] = useState<Stats>(emptyStats);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [skipped, setSkipped] = useState<SkippedEmail[]>([]);
-  const [jsonText, setJsonText] = useState(JSON.stringify(starterEmails, null, 2));
+  const [jsonText, setJsonText] = useState(() => JSON.stringify(createStarterEmails(), null, 2));
   const [batch, setBatch] = useState<EmailInput[]>([]);
   const [ingestResult, setIngestResult] = useState<IngestResponse | null>(null);
   const [question, setQuestion] = useState("How many emails this batch were proposal or RFP related?");
@@ -45,8 +48,19 @@ export default function App() {
 
   async function refresh() {
     setError(null);
-    const [nextStats, nextTasks, nextSkipped] = await Promise.all([getStats(), getTasks(), getSkipped()]);
-    setStats(nextStats); setTasks(nextTasks); setSkipped(nextSkipped);
+    const results = await Promise.allSettled([getStats(), getTasks(), getSkipped()]);
+    const [statsResult, tasksResult, skippedResult] = results;
+    if (statsResult.status === "fulfilled") setStats(statsResult.value);
+    if (tasksResult.status === "fulfilled") setTasks(tasksResult.value);
+    if (skippedResult.status === "fulfilled") setSkipped(skippedResult.value);
+
+    const labels = ["Stats", "Tasks", "Skipped log"];
+    const failures = results.flatMap((result, index) =>
+      result.status === "rejected"
+        ? [`${labels[index]}: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`]
+        : []
+    );
+    if (failures.length) setError(failures.join(" | "));
   }
 
   function preview() {
@@ -97,7 +111,7 @@ export default function App() {
     finally { setLoading(false); }
   }
 
-  useEffect(() => { void refresh().catch((err) => setError(err instanceof Error ? err.message : "Unable to reach backend")); }, []);
+  useEffect(() => { void refresh(); }, []);
   const assigneeRows = useMemo(() => Object.entries(stats.by_assignee), [stats.by_assignee]);
 
   return (

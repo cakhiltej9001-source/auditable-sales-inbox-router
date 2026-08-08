@@ -88,3 +88,23 @@ def test_quoted_old_intent_does_not_override_reply(tmp_path):
     task = session.exec(select(TaskRecord)).one()
     assert result.status == "updated"
     assert task.assignee_id == "u_divya"
+
+
+def test_same_email_id_is_scoped_by_candidate(tmp_path):
+    session = _session(tmp_path)
+    service = _service(session)
+    email = EmailIn(
+        email_id="shared-source-id",
+        thread_id="shared-thread-id",
+        from_email="buyer@acme.com",
+        subject="Product demo",
+        body="Please schedule a demo. Budget INR 5L.",
+    )
+
+    first = service.ingest_email(email, "first@example.com", "run-first")
+    second = service.ingest_email(email, "second@example.com", "run-second")
+
+    assert first.status == "created"
+    assert second.status == "created"
+    assert len(session.exec(select(ProcessedEmail)).all()) == 2
+    assert len(session.exec(select(TaskRecord)).all()) == 2

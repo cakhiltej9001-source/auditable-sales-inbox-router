@@ -4,10 +4,17 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:800
 export const CANDIDATE_ID = (import.meta.env.VITE_CANDIDATE_ID ?? "cakhiltej9001@gmail.com").toLowerCase();
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-    ...init
-  });
+  const url = `${API_BASE_URL}${path}`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+      ...init
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "network request failed";
+    throw new Error(`Cannot reach ${url}: ${detail}`);
+  }
   if (!response.ok) {
     const detail = await response.text();
     throw new Error(`${response.status} ${response.statusText}${detail ? `: ${detail}` : ""}`);

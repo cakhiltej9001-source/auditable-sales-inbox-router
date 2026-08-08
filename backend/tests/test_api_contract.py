@@ -5,6 +5,7 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from app.core.database import get_session
 from app.main import app
+from app.api.routes import _normalized_category, _normalized_priority
 
 
 def _client(tmp_path) -> TestClient:
@@ -84,3 +85,11 @@ def test_ingest_is_synchronous_and_idempotent(tmp_path):
     assert first.json() == {"processed": 1, "tasks_created": 1, "tasks_updated": 0, "skipped": 0, "errors": []}
     assert second.json() == {"processed": 1, "tasks_created": 0, "tasks_updated": 0, "skipped": 1, "errors": []}
     assert len(client.get("/tasks", params={"candidate_id": "cakhiltej9001@gmail.com"}).json()) == 1
+
+
+def test_legacy_values_are_normalized_for_contract_responses():
+    assert _normalized_category("rfp") == "enterprise_rfp"
+    assert _normalized_category("government") == "enterprise_rfp"
+    assert _normalized_category("smb") == "smb_enquiry"
+    assert _normalized_category("unknown") == "triage"
+    assert _normalized_priority("normal") == "low"

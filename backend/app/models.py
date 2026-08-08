@@ -2,6 +2,7 @@ from datetime import date, datetime, timezone
 from enum import Enum
 from typing import Optional
 
+from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -56,10 +57,14 @@ class TaskRecord(SQLModel, table=True):
 
 
 class ProcessedEmail(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint("candidate_id", "source_email_id", name="uq_processed_candidate_source"),
+    )
+
     id: Optional[int] = Field(default=None, primary_key=True)
     candidate_id: str = Field(default="cakhiltej9001@gmail.com", index=True)
     run_id: str = Field(default="legacy", index=True)
-    source_email_id: str = Field(index=True, unique=True)
+    source_email_id: str = Field(index=True)
     thread_id: str = Field(index=True)
     message_index: int = 0
     status: ProcessingStatus = Field(index=True)
@@ -78,10 +83,14 @@ class ProcessedEmail(SQLModel, table=True):
 
 
 class SkippedEmail(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint("candidate_id", "source_email_id", name="uq_skipped_candidate_source"),
+    )
+
     id: Optional[int] = Field(default=None, primary_key=True)
     candidate_id: str = Field(default="cakhiltej9001@gmail.com", index=True)
     run_id: str = Field(default="legacy", index=True)
-    source_email_id: str = Field(index=True, unique=True)
+    source_email_id: str = Field(index=True)
     thread_id: str = Field(index=True)
     skip_type: str = Field(index=True)
     reason: str
