@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
-import { AlertTriangle, Bot, ClipboardList, IndianRupee, RefreshCw, Send, ShieldCheck, Upload } from "lucide-react";
-import { askQuestion, CANDIDATE_ID, getSkipped, getStats, getTasks, ingestEmails } from "./api/client";
+import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { AlertTriangle, Bot, ClipboardList, IndianRupee, RefreshCw, RotateCcw, Send, ShieldCheck, Upload } from "lucide-react";
+import { askQuestion, CANDIDATE_ID, getSkipped, getTasks, ingestEmails } from "./api/client";
 import { Metric } from "./components/Metric";
 import type { ChatResponse, EmailInput, IngestResponse, SkippedEmail, Stats, Task } from "./types/api";
 import "./styles.css";
@@ -44,38 +44,66 @@ export default function App() {
   const [question, setQuestion] = useState("How many emails this batch were proposal or RFP related?");
   const [chat, setChat] = useState<ChatResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function refresh() {
-    setRefreshing(true);
+  async function refreshBatchView(result: IngestResponse, routedBatch: EmailInput[]) {
     setError(null);
-    try {
-      const results = await Promise.allSettled([getStats(), getTasks(), getSkipped()]);
-      const [statsResult, tasksResult, skippedResult] = results;
-      if (statsResult.status === "fulfilled") setStats(statsResult.value);
-      if (tasksResult.status === "fulfilled") setTasks(tasksResult.value);
-      if (skippedResult.status === "fulfilled") setSkipped(skippedResult.value);
+    const results = await Promise.allSettled([getTasks(), getSkipped()]);
+    const [tasksResult, skippedResult] = results;
+    const emailIds = new Set(routedBatch.map((email) => email.email_id));
+    const threadIds = new Set(routedBatch.map((email) => email.thread_id));
+    const batchTasks = tasksResult.status === "fulfilled"
+      ? tasksResult.value.filter((task) => emailIds.has(task.source_email_id) || threadIds.has(task.thread_id))
+      : [];
+    const batchSkipped = skippedResult.status === "fulfilled"
+      ? skippedResult.value.filter((item) => emailIds.has(item.source_email_id) || threadIds.has(item.thread_id))
+      : [];
 
-      const labels = ["Stats", "Tasks", "Skipped log"];
-      const failures = results.flatMap((result, index) =>
-        result.status === "rejected"
-          ? [`${labels[index]}: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`]
-          : []
-      );
-      if (failures.length) {
-        setError(failures.join(" | "));
-      } else {
-        setLastRefreshedAt(new Date());
-      }
-    } finally {
-      setRefreshing(false);
+    setTasks(batchTasks);
+    setSkipped(batchSkipped);
+    setStats({
+      processed: result.processed,
+      created: result.tasks_created,
+      updated: result.tasks_updated,
+      skipped: result.skipped,
+      duplicates: 0,
+      spurious_flagged: 0,
+      by_assignee: countBy(batchTasks.map((task) => task.assignee_id)),
+      by_category: countBy([
+        ...batchTasks.map((task) => task.category),
+        ...batchSkipped.map((item) => item.skip_type)
+      ]),
+      by_priority: countBy(batchTasks.map((task) => task.priority)),
+      by_run: {},
+      total_pipeline_inr: batchTasks.reduce((total, task) => total + (task.deal_value_inr ?? 0), 0)
+    });
+
+    const labels = ["Tasks", "Skipped log"];
+    const failures = results.flatMap((requestResult, index) =>
+      requestResult.status === "rejected"
+        ? [`${labels[index]}: ${requestResult.reason instanceof Error ? requestResult.reason.message : String(requestResult.reason)}`]
+        : []
+    );
+    if (failures.length) {
+      setError(failures.join(" | "));
     }
   }
 
+  function resetDashboardView() {
+    setStats({ ...emptyStats });
+    setTasks([]);
+    setSkipped([]);
+    setBatch([]);
+    setIngestResult(null);
+    setChat(null);
+    setError(null);
+    setJsonText(JSON.stringify(createStarterEmails(), null, 2));
+    setNotice("Dashboard view reset to zero. Persisted backend data was not deleted.");
+  }
+
   function preview() {
-    setError(null); setIngestResult(null); setChat(null);
+    setError(null); setNotice(null); setIngestResult(null); setChat(null);
     try {
       const parsed: unknown = JSON.parse(jsonText);
       const emails = (Array.isArray(parsed) ? parsed : (parsed as { emails?: unknown }).emails) as EmailInput[];
@@ -93,10 +121,11 @@ export default function App() {
 
   async function routeBatch() {
     if (!batch.length) return;
-    setLoading(true); setError(null);
+    setLoading(true); setError(null); setNotice(null);
     try {
-      setIngestResult(await ingestEmails(batch));
-      await refresh();
+      const result = await ingestEmails(batch);
+      setIngestResult(result);
+      await refreshBatchView(result, batch);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Batch ingest failed");
     } finally { setLoading(false); }
@@ -105,12 +134,12 @@ export default function App() {
   function generateSamples() {
     const generated = generateSampleEmails(250);
     setJsonText(JSON.stringify(generated, null, 2));
-    setBatch(generated); setIngestResult(null); setChat(null); setError(null);
+    setBatch(generated); setIngestResult(null); setChat(null); setError(null); setNotice(null);
   }
 
   async function loadFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (file) { setJsonText(await file.text()); setBatch([]); setIngestResult(null); }
+    if (file) { setJsonText(await file.text()); setBatch([]); setIngestResult(null); setNotice(null); }
   }
 
   async function submitQuestion(event: FormEvent) {
@@ -122,7 +151,6 @@ export default function App() {
     finally { setLoading(false); }
   }
 
-  useEffect(() => { void refresh(); }, []);
   const assigneeRows = useMemo(() => Object.entries(stats.by_assignee), [stats.by_assignee]);
 
   return (
@@ -130,17 +158,12 @@ export default function App() {
       <header className="topbar">
         <div className="brandMark"><ShieldCheck size={24} /></div>
         <div><h1>Sales Inbox Task Router</h1><p>Paste emails, inspect the raw batch, route deterministically, then ask grounded questions.</p></div>
-        <div className="refreshControl">
-          <button type="button" className="secondary" onClick={() => void refresh()} disabled={loading || refreshing}>
-            <RefreshCw size={17} className={refreshing ? "spin" : undefined} />
-            {refreshing ? "Refreshing..." : "Refresh dashboard"}
-          </button>
-          <span aria-live="polite">
-            {lastRefreshedAt ? `Updated ${lastRefreshedAt.toLocaleTimeString()}` : "Not refreshed yet"}
-          </span>
-        </div>
+        <button type="button" className="secondary" onClick={resetDashboardView} disabled={loading}>
+          <RotateCcw size={17} />Reset dashboard
+        </button>
       </header>
       {error ? <div className="errorBanner">{error}</div> : null}
+      {notice ? <div className="noticeBanner" role="status">{notice}</div> : null}
 
       <section className="panel intakePanel">
         <div className="panelHeader"><div><h2>1. Paste or upload inbox JSON</h2><span>Candidate: {CANDIDATE_ID}</span></div></div>
@@ -210,4 +233,11 @@ function generateSampleEmails(count: number): EmailInput[] {
       subject, body, received_at: new Date(Date.now() - index * 60000).toISOString(), attachments: [], is_reply: false
     };
   });
+}
+
+function countBy(values: string[]): Record<string, number> {
+  return values.reduce<Record<string, number>>((counts, value) => {
+    counts[value] = (counts[value] ?? 0) + 1;
+    return counts;
+  }, {});
 }
