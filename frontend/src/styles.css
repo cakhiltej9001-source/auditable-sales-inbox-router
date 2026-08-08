@@ -103,6 +103,27 @@ td span,
   gap: 10px;
 }
 
+.refreshControl {
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+}
+
+.refreshControl span {
+  color: #66736c;
+  font-size: 12px;
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .errorBanner {
   max-width: 1440px;
   margin: 0 auto 16px;
@@ -409,6 +430,10 @@ pre {
 
   .actions {
     justify-content: flex-start;
+  }
+
+  .refreshControl {
+    justify-items: start;
   }
 }
 
