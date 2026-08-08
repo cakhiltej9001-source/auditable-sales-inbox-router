@@ -1,0 +1,91 @@
+[
+  {
+    "name": "psu_tender",
+    "email": {
+      "source_email_id": "eval-001",
+      "thread_id": "eval-thread-001",
+      "from_email": "procurement@bharatpsu.gov.in",
+      "subject": "Urgent PSU LMS tender",
+      "body": "Please submit proposal for a public sector LMS tender. Budget INR 25L. Deadline 2026-08-10."
+    },
+    "expected": {"status": "created", "assignee_id": "u_aarti", "priority": "high"}
+  },
+  {
+    "name": "enterprise_rfp",
+    "email": {
+      "source_email_id": "eval-002",
+      "thread_id": "eval-thread-002",
+      "from_email": "learning@enterprise.com",
+      "subject": "RFP for employee training platform",
+      "body": "We need a proposal for 9000 employees. Budget INR 18L."
+    },
+    "expected": {"status": "created", "assignee_id": "u_aarti", "priority": "normal"}
+  },
+  {
+    "name": "finance_invoice",
+    "email": {
+      "source_email_id": "eval-003",
+      "thread_id": "eval-thread-003",
+      "from_email": "accounts@client.com",
+      "subject": "Invoice mismatch",
+      "body": "The invoice amount and purchase order do not match. Please resolve billing."
+    },
+    "expected": {"status": "created", "assignee_id": "u_divya", "priority": "normal"}
+  },
+  {
+    "name": "marketing_sponsorship",
+    "email": {
+      "source_email_id": "eval-004",
+      "thread_id": "eval-thread-004",
+      "from_email": "events@brand.com",
+      "subject": "Sponsorship for HR summit",
+      "body": "Can your team sponsor our HR summit and campaign next month?"
+    },
+    "expected": {"status": "created", "assignee_id": "u_meera", "priority": "normal"}
+  },
+  {
+    "name": "alliance_partner",
+    "email": {
+      "source_email_id": "eval-005",
+      "thread_id": "eval-thread-005",
+      "from_email": "alliances@partner.com",
+      "subject": "Channel partnership",
+      "body": "We want to discuss reseller partnership for your learning platform."
+    },
+    "expected": {"status": "created", "assignee_id": "u_karan", "priority": "normal"}
+  },
+  {
+    "name": "smb_quote",
+    "email": {
+      "source_email_id": "eval-006",
+      "thread_id": "eval-thread-006",
+      "from_email": "founder@smallco.com",
+      "subject": "Need quote",
+      "body": "Please send a quote for our 80 person team. Budget INR 4L."
+    },
+    "expected": {"status": "created", "assignee_id": "u_rohit", "priority": "normal"}
+  },
+  {
+    "name": "ooo",
+    "email": {
+      "source_email_id": "eval-007",
+      "thread_id": "eval-thread-007",
+      "from_email": "person@example.com",
+      "subject": "Out of office",
+      "body": "Automatic reply: I am out of office this week."
+    },
+    "expected": {"status": "skipped", "assignee_id": null, "priority": null}
+  },
+  {
+    "name": "newsletter",
+    "email": {
+      "source_email_id": "eval-008",
+      "thread_id": "eval-thread-008",
+      "from_email": "news@vendor.com",
+      "subject": "Weekly digest",
+      "body": "Here is our weekly newsletter. Unsubscribe here."
+    },
+    "expected": {"status": "skipped", "assignee_id": null, "priority": null}
+  }
+]
+
