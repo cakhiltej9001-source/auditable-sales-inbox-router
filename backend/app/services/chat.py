@@ -3,6 +3,7 @@ from collections import Counter
 
 from sqlmodel import Session, select
 
+from app.core.identity import normalize_candidate_id
 from app.models import ProcessedEmail, ProcessingStatus, TaskRecord
 
 
@@ -13,24 +14,27 @@ def answer_question(
     email_ids: list[str] | None = None,
 ) -> tuple[str, dict, str]:
     q = question.lower().strip()
-    processed = session.exec(select(ProcessedEmail).where(ProcessedEmail.candidate_id == candidate_id.lower())).all()
+    candidate = normalize_candidate_id(candidate_id)
+    processed = session.exec(select(ProcessedEmail).where(ProcessedEmail.candidate_id == candidate)).all()
     if email_ids is not None:
         allowed = set(email_ids)
         processed = [row for row in processed if row.source_email_id in allowed]
     task_ids = {row.task_record_id for row in processed if row.task_record_id is not None}
-    tasks = session.exec(select(TaskRecord).where(TaskRecord.candidate_id == candidate_id.lower())).all()
+    tasks = session.exec(select(TaskRecord).where(TaskRecord.candidate_id == candidate)).all()
     if email_ids is not None:
         tasks = [task for task in tasks if task.id in task_ids]
 
-    asks_to_send_email = "send" in q and "email" in q
-    if asks_to_send_email or any(token in q for token in ["delete", "assign it", "create a task"]):
+    asks_to_send_email = any(verb in q for verb in ["send", "email", "message", "notify"]) and any(
+        verb in q for verb in ["send", "write", "draft", "compose", "notify"]
+    )
+    if asks_to_send_email or any(token in q for token in ["delete", "assign it", "reassign", "create a task", "close the task"]):
         return "I can answer questions about processed inbox data, but I cannot send emails or perform actions.", {}, "out_of_scope"
 
     if "gst" in q and "refund" in q:
         count = sum(1 for row in processed if "gst" in row.raw_email_json.lower() and "refund" in row.raw_email_json.lower())
         return f"There are {count} emails about GST refunds in this batch.", {"gst_refund_count": count}, "gst_refund_count"
 
-    if "updated" in q and "thread" in q:
+    if "thread" in q and any(token in q for token in ["updated", "update", "changed", "more than once", "multiple"]):
         updates = Counter(row.thread_id for row in processed if row.status == ProcessingStatus.updated)
         repeated = sorted(thread_id for thread_id, count in updates.items() if count > 1)
         return (
@@ -72,7 +76,19 @@ def answer_question(
         data = {"total_deal_value_inr": total, "rfps_with_no_stated_value": missing}
         return f"Open RFP value is INR {total:,}; {missing} RFP tasks have no stated value and were not treated as zero.", data, "open_rfp_value"
 
-    if "marketing" in q and any(token in q for token in ["spam", "versus", "vs"]):
+    asks_about_rfps = "rfp" in q or "proposal" in q
+    asks_about_marketing = any(token in q for token in ["marketing", "sponsorship", "campaign", "webinar"])
+    if asks_about_rfps and asks_about_marketing:
+        enterprise = sum(1 for row in processed if row.category == "enterprise_rfp" and row.status != ProcessingStatus.skipped)
+        marketing = sum(1 for row in processed if row.category == "marketing" and row.status != ProcessingStatus.skipped)
+        data = {"enterprise_rfp": enterprise, "marketing": marketing}
+        return (
+            f"This batch contains {enterprise} proposal or enterprise-RFP emails and {marketing} marketing emails.",
+            data,
+            "rfp_vs_marketing",
+        )
+
+    if asks_about_marketing and any(token in q for token in ["spam", "junk", "ignored", "skipped", "vendor pitch"]):
         marketing = sum(1 for row in processed if row.category == "marketing" and row.status != ProcessingStatus.skipped)
         spam = sum(
             1 for row in processed
@@ -81,7 +97,7 @@ def answer_question(
         data = {"marketing": marketing, "skipped_marketing_lookalike_spam": spam}
         return f"{marketing} emails were routed as marketing; {spam} marketing-adjacent vendor spam emails were correctly skipped.", data, "marketing_vs_spam"
 
-    if any(token in q for token in ["proposal", "rfp related", "rfp-related"]):
+    if asks_about_rfps:
         count = sum(1 for row in processed if row.category == "enterprise_rfp" and row.status != ProcessingStatus.skipped)
         return f"There are {count} proposal or enterprise-RFP-related emails in this batch.", {"enterprise_rfp": count}, "enterprise_rfp_count"
 
