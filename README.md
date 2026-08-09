@@ -8,7 +8,7 @@
 
 **Chat endpoint:** https://auditable-sales-inbox-router.onrender.com/api/chat
 
-**Video Walkthrough - https://drive.google.com/file/d/1DTjFWwX5rU2PrYZrI0zk7VkA2rOYACC_/view?usp=drive_link
+Video Walkthrough - https://drive.google.com/file/d/1DTjFWwX5rU2PrYZrI0zk7VkA2rOYACC_/view?usp=drive_link
 
 An auditable sales-inbox agent: it extracts grounded facts with Gemini when configured, applies deterministic business rules, prevents replay duplicates, reconciles thread replies, persists every decision, and answers analytics questions only from stored data.
 
