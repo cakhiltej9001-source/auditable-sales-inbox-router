@@ -1,7 +1,16 @@
 import type { ChatResponse, EmailInput, IngestResponse, SkippedEmail, Stats, Task } from "../types/api";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000").replace(/\/$/, "");
-export const CANDIDATE_ID = (import.meta.env.VITE_CANDIDATE_ID ?? "cakhiltej9001@gmail.com").toLowerCase();
+
+function normalizeCandidateId(value: string): string {
+  const candidate = value.trim().toLowerCase();
+  const at = candidate.lastIndexOf("@");
+  if (at < 0) return candidate;
+  const local = candidate.slice(0, at).split("+", 1)[0];
+  return `${local}@${candidate.slice(at + 1)}`;
+}
+
+export const CANDIDATE_ID = normalizeCandidateId(import.meta.env.VITE_CANDIDATE_ID ?? "cakhiltej9001@gmail.com");
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
