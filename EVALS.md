@@ -4,7 +4,7 @@
 
 `eval/labels.json` contains 60 manually reviewed deterministic routing cases. `eval/challenge_cases.json` adds twelve harder worked-example regressions for Indian comma currency, ordinal and Hinglish dates, explicitly priced sponsorships, government overrides, ambiguous requests, directional vendor spam, and high-value non-sales amounts that must not override Marketing, Alliances, or Triage ownership.
 
-The original `inbox.json` was not included with the supplied problem-statement PDF. This repository therefore does not falsely claim that these are labels from an unavailable file; replace or extend them with the supplied inbox before final submission if it is provided separately.
+The original `inbox.json` was not included with the supplied problem-statement PDF and is not present in this repository or the candidate workspace. This repository therefore does not falsely claim that these are labels from an unavailable file. **Submission blocker:** replace or extend these fixtures with at least 50 manually reviewed rows from the original `inbox.json` as soon as that file is supplied.
 
 The evaluator runs the same preprocessing, fallback extraction, routing, persistence, and idempotency path used by the service. It also verifies explicitly expected company, deal-value, and due-date fields in the challenge cases. It computes true positives, false positives, false negatives, precision, and recall per stored category.
 

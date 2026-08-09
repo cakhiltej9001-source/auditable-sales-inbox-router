@@ -245,7 +245,7 @@ export default function App() {
         <section className="panel chatPanel"><div className="panelHeader"><div><h2>3. Grounded batch chat</h2><span>{batch.length ? `Scoped to ${batch.length} previewed emails` : "Preview a batch first"}</span></div><Bot size={20} /></div>
           <form onSubmit={submitQuestion} className="chatForm"><input aria-label="Ask about this batch" placeholder="Type your own question or choose a sample below" value={question} onChange={(event) => setQuestion(event.target.value)} /><button type="submit" disabled={loading || !batch.length}><Send size={17} />Ask</button></form>
           <div className="sampleQuestions" aria-labelledby="sample-questions-heading">
-            <div className="sampleQuestionsHeader"><strong id="sample-questions-heading">10 sample questions from section 7.3(a)</strong><span>Choose one to fill the input, then select Ask.</span></div>
+            <div className="sampleQuestionsHeader"><strong id="sample-questions-heading">10 sample questions</strong><span>Choose one to fill the input, then select Ask.</span></div>
             <div className="sampleQuestionGrid">{SAMPLE_QUESTIONS.map((sample, index) => <button type="button" className="sampleQuestion" key={sample} onClick={() => setQuestion(sample)} disabled={loading || !batch.length}><span>{index + 1}</span>{sample}</button>)}</div>
           </div>
           {chat ? <div className="chatAnswer"><strong>{chat.answer}</strong>{chat.query_intent ? <span>Intent: {chat.query_intent}</span> : null}<pre>{JSON.stringify(chat.supporting_data, null, 2)}</pre></div> : <p className="muted chatHint">Answers and supporting data stay scoped to the previewed batch.</p>}

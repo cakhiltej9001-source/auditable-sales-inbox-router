@@ -5,6 +5,7 @@ from collections import Counter
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Response, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
+from sqlalchemy import text
 from sqlmodel import Session, select
 
 from app.core.config import get_settings
@@ -48,6 +49,18 @@ def root() -> dict[str, str]:
 @router.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@router.get("/ready")
+def ready(session: Session = Depends(get_session)) -> dict[str, str]:
+    """Verify the database and report the configured extraction mode safely."""
+    session.exec(text("SELECT 1")).one()
+    settings = get_settings()
+    return {
+        "status": "ready",
+        "database": "ok",
+        "extractor": "gemini" if settings.gemini_api_key else "heuristic_fallback",
+    }
 
 
 @router.post("/tasks", response_model=TaskCreated, status_code=status.HTTP_201_CREATED)
