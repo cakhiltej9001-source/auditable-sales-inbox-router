@@ -112,6 +112,15 @@ def test_ingest_and_chat_share_canonical_candidate_identity(tmp_path):
     assert chat["supporting_data"]["enterprise_rfp"] == 0
 
 
+def test_ready_checks_database_and_reports_extractor_mode(tmp_path):
+    client = _client(tmp_path)
+    response = client.get("/ready")
+    assert response.status_code == 200
+    assert response.json()["status"] == "ready"
+    assert response.json()["database"] == "ok"
+    assert response.json()["extractor"] in {"gemini", "heuristic_fallback"}
+
+
 def test_ingest_is_synchronous_and_idempotent(tmp_path):
     client = _client(tmp_path)
     payload = {

@@ -5,7 +5,7 @@ from sqlmodel import Session, SQLModel, create_engine, select
 from app.models import ProcessedEmail, TaskRecord
 from app.schemas import EmailIn
 from app.services.extractor import HeuristicExtractor
-from app.services.ingestion import IngestionService
+from app.services.ingestion import IngestionService, _thread_lock_key
 
 
 def _session(tmp_path: Path) -> Session:
@@ -173,3 +173,44 @@ def test_partial_reply_preserves_supported_thread_facts(tmp_path):
     assert task.deal_value_inr == 1_800_000
     assert task.due_date.isoformat() == "2026-08-20"
     assert task.priority == "medium"
+
+
+def test_deadline_only_reply_preserves_existing_owner_and_category(tmp_path):
+    session = _session(tmp_path)
+    service = _service(session)
+    first = EmailIn(
+        email_id="deadline-1",
+        thread_id="deadline-thread",
+        from_email="buyer@acme.com",
+        subject="Enterprise RFP",
+        body="Please submit an RFP proposal. Budget INR 18L.",
+        received_at="2026-08-08T09:00:00+00:00",
+    )
+    reply = EmailIn(
+        email_id="deadline-2",
+        thread_id="deadline-thread",
+        message_index=1,
+        is_reply=True,
+        from_email="buyer@acme.com",
+        subject="Re: updated timeline",
+        body="Please move the deadline to tomorrow.",
+        received_at="2026-08-08T10:00:00+00:00",
+    )
+
+    service.ingest_email(first)
+    result = service.ingest_email(reply)
+    task = session.exec(select(TaskRecord)).one()
+
+    assert result.status == "updated"
+    assert task.assignee_id == "u_aarti"
+    assert task.category == "enterprise_rfp"
+    assert task.due_date.isoformat() == "2026-08-09"
+    assert task.priority == "high"
+    assert "existing ownership was preserved" in task.reasoning
+
+
+def test_thread_lock_key_is_stable_signed_64_bit():
+    first = _thread_lock_key("candidate@example.com", "thread-1")
+    assert first == _thread_lock_key("candidate@example.com", "thread-1")
+    assert first != _thread_lock_key("candidate@example.com", "thread-2")
+    assert -(2**63) <= first < 2**63

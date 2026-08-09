@@ -100,14 +100,28 @@ class HeuristicExtractor(Extractor):
         if category == "finance":
             deal_value = None
 
+        company_name = _extract_company(company_text, email.from_name)
+        due_date = _extract_due_date(text, email.received_at)
+        if email.is_reply and any(value is not None for value in [company_name, deal_value, due_date]):
+            actionable = True
+            if category == "not_actionable":
+                category = "triage"
+
         signals = [token for token in ["government", "govt", "psu", "tender", "deadline", "overdue", "past due", "invoice", "sponsorship", "partnership", "reseller"] if token in text]
-        confidence = 0.9 if government else 0.82 if category not in {"triage", "not_actionable"} else 0.42
+        confidence = _evidence_confidence(
+            category=category,
+            government=government,
+            matched_intents=len(matches),
+            company_name=company_name,
+            deal_value_inr=deal_value,
+            due_date=due_date,
+        )
         return ExtractionResult(
             category=category,
             is_actionable=actionable,
-            company_name=_extract_company(company_text, email.from_name),
+            company_name=company_name,
             deal_value_inr=deal_value,
-            due_date=_extract_due_date(text, email.received_at),
+            due_date=due_date,
             summary=(email.subject or email.body[:180] or "Action required")[:180],
             confidence=confidence,
             signals=signals,
@@ -116,6 +130,26 @@ class HeuristicExtractor(Extractor):
 
 def get_extractor(settings: Settings) -> Extractor:
     return GeminiExtractor(settings) if settings.gemini_api_key else HeuristicExtractor()
+
+
+def _evidence_confidence(
+    *,
+    category: str,
+    government: bool,
+    matched_intents: int,
+    company_name: str | None,
+    deal_value_inr: int | None,
+    due_date: date | None,
+) -> float:
+    """Correlate fallback confidence with explicit, independently grounded evidence."""
+    if government:
+        return 0.93
+    if category == "triage":
+        return 0.42 if matched_intents > 1 else 0.36
+    if category == "not_actionable":
+        return 0.65
+    evidence_count = sum(value is not None for value in [company_name, deal_value_inr, due_date])
+    return min(0.94, 0.74 + min(matched_intents, 1) * 0.08 + evidence_count * 0.04)
 
 
 def _extract_inr(text: str) -> int | None:
