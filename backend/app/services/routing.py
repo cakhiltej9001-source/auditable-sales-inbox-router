@@ -23,16 +23,20 @@ def route_extraction(extraction: ExtractionResult, received_at: datetime | None 
 
     if _has_government_signal(extraction):
         return _decision("u_aarti", "enterprise_rfp", priority, "Government/PSU tender override applies irrespective of value.", "route.gov_psu")
-    if extraction.category == "enterprise_rfp" or (
-        extraction.deal_value_inr is not None and extraction.deal_value_inr > ENTERPRISE_THRESHOLD_INR
-    ):
-        return _decision("u_aarti", "enterprise_rfp", priority, "Enterprise RFP or deal above INR 10L.", "route.enterprise")
     if extraction.category == "finance":
         return _decision("u_divya", "finance", priority, "Invoice, purchase order, payment, GST, or billing request.", "route.finance")
     if extraction.category == "marketing":
         return _decision("u_meera", "marketing", priority, "Marketing, media, campaign, webinar, or sponsorship request.", "route.marketing")
     if extraction.category == "alliances":
         return _decision("u_karan", "alliances", priority, "Alliance, reseller, channel, or integration request.", "route.alliances")
+    if extraction.category == "triage":
+        return _decision("u_triage", "triage", priority, "Actionable request is ambiguous or contains competing intents.", "route.triage")
+    if extraction.category == "enterprise_rfp" or (
+        extraction.category == "smb_enquiry"
+        and extraction.deal_value_inr is not None
+        and extraction.deal_value_inr > ENTERPRISE_THRESHOLD_INR
+    ):
+        return _decision("u_aarti", "enterprise_rfp", priority, "Enterprise RFP or sales deal above INR 10L.", "route.enterprise")
     if extraction.category == "smb_enquiry":
         return _decision("u_rohit", "smb_enquiry", priority, "SMB enquiry or deal at or below INR 10L.", "route.smb")
     return _decision("u_triage", "triage", priority, "Actionable request is ambiguous or contains competing intents.", "route.triage")

@@ -100,14 +100,28 @@ class HeuristicExtractor(Extractor):
         if category == "finance":
             deal_value = None
 
+        company_name = _extract_company(company_text, email.from_name)
+        due_date = _extract_due_date(text, email.received_at)
+        if email.is_reply and any(value is not None for value in [company_name, deal_value, due_date]):
+            actionable = True
+            if category == "not_actionable":
+                category = "triage"
+
         signals = [token for token in ["government", "govt", "psu", "tender", "deadline", "overdue", "past due", "invoice", "sponsorship", "partnership", "reseller"] if token in text]
-        confidence = 0.9 if government else 0.82 if category not in {"triage", "not_actionable"} else 0.42
+        confidence = _evidence_confidence(
+            category=category,
+            government=government,
+            matched_intents=len(matches),
+            company_name=company_name,
+            deal_value_inr=deal_value,
+            due_date=due_date,
+        )
         return ExtractionResult(
             category=category,
             is_actionable=actionable,
-            company_name=_extract_company(company_text),
+            company_name=company_name,
             deal_value_inr=deal_value,
-            due_date=_extract_due_date(text, email.received_at),
+            due_date=due_date,
             summary=(email.subject or email.body[:180] or "Action required")[:180],
             confidence=confidence,
             signals=signals,
@@ -116,6 +130,26 @@ class HeuristicExtractor(Extractor):
 
 def get_extractor(settings: Settings) -> Extractor:
     return GeminiExtractor(settings) if settings.gemini_api_key else HeuristicExtractor()
+
+
+def _evidence_confidence(
+    *,
+    category: str,
+    government: bool,
+    matched_intents: int,
+    company_name: str | None,
+    deal_value_inr: int | None,
+    due_date: date | None,
+) -> float:
+    """Correlate fallback confidence with explicit, independently grounded evidence."""
+    if government:
+        return 0.93
+    if category == "triage":
+        return 0.42 if matched_intents > 1 else 0.36
+    if category == "not_actionable":
+        return 0.65
+    evidence_count = sum(value is not None for value in [company_name, deal_value_inr, due_date])
+    return min(0.94, 0.74 + min(matched_intents, 1) * 0.08 + evidence_count * 0.04)
 
 
 def _extract_inr(text: str) -> int | None:
@@ -179,11 +213,42 @@ def _extract_due_date(text: str, received_at: datetime | None) -> date | None:
     return None
 
 
-def _extract_company(text: str) -> str | None:
+def _extract_company(text: str, from_name: str | None = None) -> str | None:
     match = re.search(
         r"(?:company|organisation|organization)\s*(?:name)?\s*[:\-]\s*"
         r"([A-Za-z][A-Za-z0-9 &'-]{1,60}?)(?=[.;,\n]|$)",
         text,
         re.I,
     )
-    return match.group(1).strip(" .") if match else None
+    if match:
+        return match.group(1).strip(" .")
+
+    signature = re.search(
+        r"(?:^|\n|â€”|—|--)\s*[A-Z][A-Za-z .'-]{1,50},\s*"
+        r"(?:Founder|CEO|Director|Head|Lead|Manager|VP(?:\s+[A-Za-z]+)?)\s*,\s*"
+        r"([A-Z][A-Za-z0-9 &'.,-]{2,60})\s*$",
+        text,
+        re.M,
+    )
+    if signature:
+        return signature.group(1).strip(" .,-")
+
+    if from_name and _looks_like_company_name(from_name):
+        return from_name.strip(" .,-")
+
+    explicit_organization = re.search(
+        r"\b([A-Z][A-Za-z0-9&'.-]*(?:\s+[A-Z][A-Za-z0-9&'.-]*){0,5}\s+"
+        r"(?:Private Limited|Pvt\.? Ltd\.?|Limited|Ltd\.?|LLP|Corporation|Corp\.?|Inc\.?|"
+        r"Logistics|Services|Partners|Industries|Technologies|Systems|Retail|Steel|Summit))\b",
+        text,
+    )
+    return explicit_organization.group(1).strip(" .,-") if explicit_organization else None
+
+
+def _looks_like_company_name(value: str) -> bool:
+    return bool(re.search(
+        r"\b(?:Private Limited|Pvt\.? Ltd\.?|Limited|Ltd\.?|LLP|Corporation|Corp\.?|Inc\.?|"
+        r"Logistics|Services|Partners|Industries|Technologies|Systems|Retail|Steel|Summit)\b",
+        value,
+        re.I,
+    ))

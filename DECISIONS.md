@@ -8,13 +8,13 @@ With two more weeks, I would add a token-budgeted request queue, provider teleme
 
 ## 2. Idempotency uses an immutable email identity
 
-`ProcessedEmail.source_email_id` is unique within a candidate. A replay increments audit metadata and returns a duplicate result without another task write. Tasks also use a stable thread-derived ID during ingest, while direct `POST /tasks` and ingestion share one task-write service.
+`ProcessedEmail.source_email_id` is unique within a canonical candidate identity. Candidate IDs are trimmed, lowercased, and stripped of `+alias` tags on every read and write, so an alias cannot create a second task namespace. A replay increments audit metadata and returns a duplicate result without another task write. PostgreSQL advisory transaction locks serialize writes for the same canonical candidate/thread, closing the query-then-insert race for both identical replays and replies arriving together. Tasks also use a stable thread-derived ID during ingest, while direct `POST /tasks` and ingestion share one task-write service.
 
-With two more weeks, I would add PostgreSQL advisory locks or transactional upserts to make simultaneous delivery of the same message safe across multiple workers.
+With two more weeks, I would replace the application-managed lock with a database-native upsert and add multi-worker PostgreSQL stress tests with forced transaction interleavings.
 
 ## 3. Thread reconciliation preserves supported facts and the grader key
 
-A new `email_id` on an existing candidate/thread updates the task and increments `update_count`. The task retains the original `source_email_id`, allowing Run 1 to remain alignable, while every reply is stored as its own audit row. Quoted old text is removed before extraction. Acknowledgement-only replies update the audit without rerouting, and partial replies merge only newly supported facts so existing company, value, deadline, and priority evidence are not erased.
+A new `email_id` on an existing candidate/thread updates the task and increments `update_count`. The task retains the original `source_email_id`, allowing Run 1 to remain alignable, while every reply is stored as its own audit row. Quoted old text is removed before extraction. Acknowledgement-only replies update the audit without rerouting, partial replies merge only newly supported facts, and fact-only replies such as deadline changes preserve the existing owner/category instead of falling into triage.
 
 With two more weeks, I would store field-level change history and distinguish customer replies from internal forwards more explicitly.
 
@@ -26,6 +26,6 @@ With two more weeks, I would formalize the intent grammar, add a read-only analy
 
 ## 5. Known limitation knowingly shipped
 
-The fallback parser handles Indian comma currency, lakh/crore units, ISO/numeric/ordinal dates, and explicit company labels, but it still misses word-number values such as “ten lakhs,” informal deadlines such as “next working Friday,” and implicit company mentions. Returning null or medium/low confidence is safer than fabricating a value or date.
+The fallback parser handles Indian comma currency, lakh/crore units, ISO/numeric/ordinal dates, explicit company labels, clear signature companies, organization-like sender names, and relative deadline-only thread replies. Its confidence now rises with independently grounded company, value, and date evidence, but it still misses word-number values such as “ten lakhs,” informal deadlines such as “next working Friday,” and implicit company mentions. Returning null or low confidence is safer than fabricating a value or date.
 
 With two more weeks, I would add a locale-aware word-number/date parser, more multilingual fixtures, and calibrated confidence based on held-out data rather than fixed heuristic bands.

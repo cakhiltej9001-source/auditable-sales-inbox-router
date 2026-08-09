@@ -2,6 +2,7 @@ import uuid
 
 from sqlmodel import Session, select
 
+from app.core.identity import normalize_candidate_id
 from app.models import TaskRecord
 from app.schemas import TaskCreate
 
@@ -15,7 +16,7 @@ class TaskWriteService:
     def find_by_source(self, candidate_id: str, source_email_id: str) -> TaskRecord | None:
         return self.session.exec(
             select(TaskRecord).where(
-                TaskRecord.candidate_id == candidate_id.lower(),
+                TaskRecord.candidate_id == normalize_candidate_id(candidate_id),
                 TaskRecord.source_email_id == source_email_id,
             )
         ).first()
@@ -28,7 +29,7 @@ class TaskWriteService:
         reasoning: str = "Created through the Task API.",
         supporting_data_json: str = "{}",
     ) -> tuple[TaskRecord, bool]:
-        candidate_id = str(payload.candidate_id).lower()
+        candidate_id = normalize_candidate_id(payload.candidate_id)
         existing = self.find_by_source(candidate_id, payload.source_email_id)
         if existing:
             return existing, False

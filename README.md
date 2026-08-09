@@ -24,7 +24,7 @@ On Windows, copy `.env.example` to `.env` in Explorer or use `Copy-Item .env.exa
 
 1. Accepts the exact inbox schema through synchronous `POST /ingest` in batches of at most 100.
 2. Strips HTML and quoted reply history, rejects obvious noise, then uses Gemini structured output or a deterministic fallback extractor.
-3. Applies fixed precedence in Python: government/PSU → enterprise value → finance → marketing → alliances → SMB → triage.
+3. Applies fixed precedence in Python: government/PSU override → Finance/Marketing/Alliances intent → ambiguity → enterprise sales threshold → SMB.
 4. Writes through one shared task persistence service and stores an audit row in PostgreSQL. Replayed `email_id` values are ignored; new messages on an existing thread merge into its task without erasing previously supported facts.
 5. Serves aggregate and conversational answers from stored classifications rather than asking a model to invent numbers.
 
@@ -38,6 +38,7 @@ All routes use the backend URL above and require no authentication:
 - `DELETE /tasks/{task_id}` — development cleanup
 - `GET /users` — team roster
 - `POST /ingest` — synchronous batch ingest, maximum 100
+- `GET /ready` — verifies the database and reports `gemini` or `heuristic_fallback` extraction mode without exposing secrets
 - `GET /api/tasks` — enriched frontend task list
 - `GET /api/stats` — processed/created/updated/skipped/spurious aggregates by category and run
 - `PATCH /api/tasks/{task_id}/spurious` — record or clear an auditable reviewer spurious flag
@@ -80,7 +81,7 @@ cd backend
 python ../eval/eval.py
 ```
 
-The checked-in evaluator currently runs 69 deterministic cases, including nine challenge-trap cases. `EVALS.md` clearly separates these regression fixtures from the unavailable original `inbox.json` corpus.
+The checked-in evaluator currently runs 72 deterministic cases, including twelve challenge-trap cases. `EVALS.md` clearly separates these regression fixtures from the unavailable original `inbox.json` corpus.
 
 ## Environment and deployment
 
@@ -98,6 +99,7 @@ Render backend settings:
 Root Directory: backend
 Build Command: pip install -r requirements.txt
 Start Command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+Health Check Path: /ready
 ```
 
 Render frontend static-site settings:
@@ -110,3 +112,22 @@ Environment: VITE_API_BASE_URL=https://auditable-sales-inbox-router.onrender.com
 ```
 
 Do not commit `.env`, API keys, database passwords, production email payloads, or access tokens.
+
+## Submission readiness
+
+Before sharing the URLs, confirm the backend responds inside the grader's 60-second timeout and that Gemini is active:
+
+```powershell
+curl.exe https://auditable-sales-inbox-router.onrender.com/ready
+```
+
+The response should contain `"status":"ready"`, `"database":"ok"`, and `"extractor":"gemini"`. If it reports `heuristic_fallback`, set `GEMINI_API_KEY` only on the Render backend and redeploy.
+
+Use a fresh production database for grading. If this candidate's database contains demo runs, the following operator-only command deletes only that canonical candidate's tasks and audit rows. It requires the identity twice and is intentionally not exposed as a public HTTP endpoint:
+
+```powershell
+cd backend
+python scripts/reset_candidate_data.py --candidate-id cakhiltej9001@gmail.com --confirm-candidate-id cakhiltej9001@gmail.com
+```
+
+Run it only against the intended database, then verify that `GET /tasks?candidate_id=cakhiltej9001@gmail.com` returns an empty list before the grader starts.

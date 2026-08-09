@@ -1,8 +1,10 @@
 import hashlib
 import json
 
+from sqlalchemy import text
 from sqlmodel import Session, select
 
+from app.core.identity import normalize_candidate_id
 from app.models import ProcessedEmail, ProcessingStatus, SkippedEmail, TaskRecord, utc_now
 from app.schemas import EmailIn, IngestItemResult, TaskCreate
 from app.services.extractor import Extractor
@@ -22,8 +24,9 @@ class IngestionService:
         candidate_id: str = "cakhiltej9001@gmail.com",
         run_id: str = "manual",
     ) -> IngestItemResult:
-        candidate_id = candidate_id.lower()
+        candidate_id = normalize_candidate_id(candidate_id)
         email = normalize_email(email)
+        self._lock_thread(candidate_id, email.thread_id)
         existing_email = self.session.exec(
             select(ProcessedEmail).where(
                 ProcessedEmail.candidate_id == candidate_id,
@@ -56,6 +59,15 @@ class IngestionService:
 
         extraction = self.extractor.extract(email)
         routing = route_extraction(extraction, email.received_at)
+        if existing_thread_task and _is_fact_only_thread_update(extraction):
+            routing = routing.model_copy(update={
+                "should_skip": False,
+                "skip_type": None,
+                "assignee_id": existing_thread_task.assignee_id,
+                "category": existing_thread_task.category,
+                "reason": "Thread reply supplied new grounded facts without a new business intent; existing ownership was preserved.",
+                "rule_id": "route.thread_fact_update",
+            })
         if existing_thread_task and _is_acknowledgement_reply(email):
             return self._persist_acknowledgement(
                 email,
@@ -232,10 +244,29 @@ class IngestionService:
         task = self.session.get(TaskRecord, task_record_id) if task_record_id else None
         return task.external_task_id if task else None
 
+    def _lock_thread(self, candidate_id: str, thread_id: str) -> None:
+        """Serialize writes to one candidate/thread on PostgreSQL.
+
+        The lock lasts for the current transaction and closes the query-then-insert
+        race for both identical replays and distinct replies arriving together.
+        """
+        bind = self.session.get_bind()
+        if bind.dialect.name != "postgresql":
+            return
+        self.session.exec(
+            text("SELECT pg_advisory_xact_lock(:lock_key)"),
+            params={"lock_key": _thread_lock_key(candidate_id, thread_id)},
+        )
+
 
 def _stable_task_id(candidate_id: str, thread_id: str) -> str:
     digest = hashlib.sha256(f"{candidate_id}:{thread_id}".encode()).hexdigest()[:12]
     return f"tsk_{digest}"
+
+
+def _thread_lock_key(candidate_id: str, thread_id: str) -> int:
+    digest = hashlib.sha256(f"{candidate_id}:{thread_id}".encode()).digest()[:8]
+    return int.from_bytes(digest, byteorder="big", signed=True)
 
 
 def _build_task_payload(candidate_id, email, extraction, routing) -> dict:
@@ -304,6 +335,17 @@ def _is_acknowledgement_reply(email: EmailIn) -> bool:
 def _has_priority_evidence(signals: list[str], due_date) -> bool:
     signal_text = " ".join(signals).lower()
     return due_date is not None or any(token in signal_text for token in ["overdue", "past due"])
+
+
+def _is_fact_only_thread_update(extraction) -> bool:
+    return (
+        extraction.category in {"triage", "not_actionable"}
+        and any(value is not None for value in [
+            extraction.company_name,
+            extraction.deal_value_inr,
+            extraction.due_date,
+        ])
+    )
 
 
 def _preserve_higher_priority(current: str, proposed: str) -> str:
