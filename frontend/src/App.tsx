@@ -1,6 +1,6 @@
 import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { AlertTriangle, Bot, ClipboardList, IndianRupee, RefreshCw, RotateCcw, Send, ShieldCheck, Upload } from "lucide-react";
-import { askQuestion, CANDIDATE_ID, getSkipped, getTasks, ingestEmails } from "./api/client";
+import { askQuestion, CANDIDATE_ID, getSkipped, getTasks, ingestEmails, reviewSpuriousTask } from "./api/client";
 import { Metric } from "./components/Metric";
 import type { ChatResponse, EmailInput, IngestResponse, SkippedEmail, Stats, Task } from "./types/api";
 import "./styles.css";
@@ -46,6 +46,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [spuriousTaskIds, setSpuriousTaskIds] = useState<Set<string>>(() => new Set());
 
   async function refreshBatchView(result: IngestResponse, routedBatch: EmailInput[]) {
     setError(null);
@@ -62,6 +63,7 @@ export default function App() {
 
     setTasks(batchTasks);
     setSkipped(batchSkipped);
+    setSpuriousTaskIds(new Set());
     setStats({
       processed: result.processed,
       created: result.tasks_created,
@@ -98,6 +100,7 @@ export default function App() {
     setIngestResult(null);
     setChat(null);
     setError(null);
+    setSpuriousTaskIds(new Set());
     setJsonText(JSON.stringify(createStarterEmails(), null, 2));
     setNotice("Dashboard view reset to zero. Persisted backend data was not deleted.");
   }
@@ -151,6 +154,26 @@ export default function App() {
     finally { setLoading(false); }
   }
 
+  async function toggleSpurious(task: Task) {
+    const currentlyFlagged = spuriousTaskIds.has(task.task_id);
+    setLoading(true); setError(null);
+    try {
+      await reviewSpuriousTask(task.task_id, !currentlyFlagged);
+      setSpuriousTaskIds((current) => {
+        const next = new Set(current);
+        if (currentlyFlagged) next.delete(task.task_id); else next.add(task.task_id);
+        return next;
+      });
+      setStats((current) => ({
+        ...current,
+        spurious_flagged: Math.max(0, current.spurious_flagged + (currentlyFlagged ? -1 : 1))
+      }));
+      setNotice(currentlyFlagged ? "Spurious flag cleared." : "Task flagged as spurious with an audit reason.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update the spurious review flag");
+    } finally { setLoading(false); }
+  }
+
   const assigneeRows = useMemo(() => Object.entries(stats.by_assignee), [stats.by_assignee]);
 
   return (
@@ -192,13 +215,14 @@ export default function App() {
         <Metric icon={ShieldCheck} label="Tasks created" value={stats.created} />
         <Metric icon={RefreshCw} label="Thread updates" value={stats.updated} />
         <Metric icon={AlertTriangle} label="Skipped noise" value={stats.skipped} />
+        <Metric icon={AlertTriangle} label="Spurious flagged" value={stats.spurious_flagged} />
         <Metric icon={IndianRupee} label="Pipeline INR" value={stats.total_pipeline_inr.toLocaleString("en-IN")} />
       </section>
 
       <section className="contentGrid">
-        <section className="panel"><div className="panelHeader"><h2>Routed Tasks</h2><span>{tasks.length} open</span></div><div className="tableWrap"><table><thead><tr><th>Task</th><th>Owner</th><th>Priority</th><th>Company</th><th>Reason</th></tr></thead><tbody>
-          {tasks.map((task) => <tr key={task.task_id}><td><strong>{task.title}</strong><span>{task.thread_id}</span></td><td>{task.assignee_id}</td><td><span className={`pill ${task.priority}`}>{task.priority}</span></td><td>{task.company_name ?? "Unknown"}</td><td>{task.reasoning}</td></tr>)}
-          {!tasks.length ? <tr><td colSpan={5} className="empty">No routed tasks yet.</td></tr> : null}
+        <section className="panel"><div className="panelHeader"><h2>Routed Tasks</h2><span>{tasks.length} open</span></div><div className="tableWrap"><table><thead><tr><th>Task</th><th>Owner</th><th>Priority</th><th>Company</th><th>Reason</th><th>Review</th></tr></thead><tbody>
+          {tasks.map((task) => <tr key={task.task_id}><td><strong>{task.title}</strong><span>{task.thread_id}</span></td><td>{task.assignee_id}</td><td><span className={`pill ${task.priority}`}>{task.priority}</span></td><td>{task.company_name ?? "Unknown"}</td><td>{task.reasoning}</td><td><button type="button" className="secondary" disabled={loading} onClick={() => void toggleSpurious(task)}>{spuriousTaskIds.has(task.task_id) ? "Clear flag" : "Flag spurious"}</button></td></tr>)}
+          {!tasks.length ? <tr><td colSpan={6} className="empty">No routed tasks yet.</td></tr> : null}
         </tbody></table></div></section>
         <aside className="panel"><div className="panelHeader"><h2>Assignees</h2></div><div className="assigneeList">{assigneeRows.map(([name, count]) => <div className="assigneeRow" key={name}><span>{name}</span><strong>{count}</strong></div>)}{!assigneeRows.length ? <p className="muted">No assignments yet.</p> : null}</div></aside>
       </section>

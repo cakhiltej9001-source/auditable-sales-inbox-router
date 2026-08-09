@@ -177,6 +177,20 @@ class ChatResponse(BaseModel):
     query_intent: str | None = None
 
 
+class SpuriousReview(BaseModel):
+    candidate_id: EmailStr
+    spurious_flagged: bool = True
+    reason: str = Field(min_length=3, max_length=300)
+
+
+class SpuriousReviewOut(BaseModel):
+    task_id: str
+    source_email_id: str
+    spurious_flagged: bool
+    reason: str
+    reviewed_at: datetime
+
+
 TEAM_ROSTER = [
     {"user_id": "u_aarti", "name": "Aarti Menon", "department": "Sales — Enterprise", "scope": "RFPs, RFIs, tenders, and inbound deals above ₹10,00,000"},
     {"user_id": "u_rohit", "name": "Rohit Sharma", "department": "Sales — SMB", "scope": "Product enquiries, demo requests, deals at or below ₹10,00,000"},

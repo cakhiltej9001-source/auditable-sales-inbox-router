@@ -40,6 +40,8 @@ def _migrate_existing_database() -> None:
             "category": "VARCHAR NOT NULL DEFAULT 'not_actionable'",
             "confidence": "FLOAT NOT NULL DEFAULT 0",
             "spurious_flagged": "BOOLEAN NOT NULL DEFAULT FALSE",
+            "spurious_review_reason": "VARCHAR",
+            "spurious_reviewed_at": "TIMESTAMP WITH TIME ZONE",
         },
         "skippedemail": {
             "candidate_id": "VARCHAR NOT NULL DEFAULT 'cakhiltej9001@gmail.com'",

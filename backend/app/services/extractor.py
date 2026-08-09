@@ -32,7 +32,8 @@ class GeminiExtractor(Extractor):
             "For replies, treat the unquoted current body as the newest intent; the Re: subject may describe an older request. "
             "Use enterprise_rfp for RFPs/tenders/deals above INR 10L; smb_enquiry for demos/product enquiries/deals at or below INR 10L; "
             "marketing, alliances, finance, triage, newsletter, out_of_office, vendor_spam, or not_actionable otherwise. "
-            "Use null for unstated company, value, or due date. Invoice amounts are not deal values.\n\n"
+            "Use null for unstated company, value, or due date. Invoice amounts are not deal values. "
+            "An explicitly priced sponsorship or partnership may have a deal value.\n\n"
             f"Received: {email.received_at}\nFrom: {email.from_name or ''} <{email.from_email}>\n"
             f"Subject: {email.subject}\nBody: {email.body}"
         )
@@ -55,7 +56,8 @@ class GeminiExtractor(Extractor):
 
 class HeuristicExtractor(Extractor):
     def extract(self, email: EmailIn) -> ExtractionResult:
-        full_text = f"{email.subject} {email.body}".lower()
+        original_full_text = f"{email.subject} {email.body}"
+        full_text = original_full_text.lower()
         groups = {
             "finance": ["invoice", "payment", "billing", "refund", "purchase order", "gst", "vendor bill"],
             "marketing": ["sponsor", "sponsorship", "campaign", "webinar", "event booth", "conference", "media", "content collaboration", "pr opportunity"],
@@ -72,6 +74,7 @@ class HeuristicExtractor(Extractor):
         # A reply subject often describes the old thread intent. When the fresh,
         # unquoted body has a clear category, it must take precedence.
         text = body_text if email.is_reply and body_has_explicit_intent else full_text
+        company_text = email.body if email.is_reply and body_has_explicit_intent else original_full_text
         government = any(token in text for token in ["government", "govt", "psu", "ministry", "public sector", "tender"])
         matches = [name for name, tokens in groups.items() if any(token in text for token in tokens)]
         deal_value = _extract_inr(text)
@@ -87,12 +90,14 @@ class HeuristicExtractor(Extractor):
         else:
             category = "triage"
 
-        actionable_tokens = ["please", "can you", "could you", "need", "request", "interested", "discuss", "schedule", "would like", "help", "proposal"]
+        actionable_tokens = ["please", "can you", "could you", "need", "request", "interested", "discuss", "schedule", "would like", "help", "proposal", "proceed"]
         actionable = category != "triage" or any(token in text for token in actionable_tokens)
         if not actionable:
             category = "not_actionable"
 
-        if category in {"finance", "marketing", "alliances"}:
+        # Invoice/payment amounts are liabilities, not sales pipeline. Explicit
+        # sponsorship and partnership prices remain valid deal values.
+        if category == "finance":
             deal_value = None
 
         signals = [token for token in ["government", "govt", "psu", "tender", "deadline", "overdue", "past due", "invoice", "sponsorship", "partnership", "reseller"] if token in text]
@@ -100,7 +105,7 @@ class HeuristicExtractor(Extractor):
         return ExtractionResult(
             category=category,
             is_actionable=actionable,
-            company_name=_extract_company(text),
+            company_name=_extract_company(company_text),
             deal_value_inr=deal_value,
             due_date=_extract_due_date(text, email.received_at),
             summary=(email.subject or email.body[:180] or "Action required")[:180],
@@ -114,12 +119,17 @@ def get_extractor(settings: Settings) -> Extractor:
 
 
 def _extract_inr(text: str) -> int | None:
-    match = re.search(r"(?:inr|rs\.?|₹)\s*([0-9]+(?:\.[0-9]+)?)\s*(cr|crore|l|lac|lakh|lakhs|k)?", text, re.I)
+    match = re.search(
+        r"(?:inr|rs\.?|₹|â‚¹)\s*([0-9][0-9,]*(?:\.[0-9]+)?)\s*"
+        r"(cr|crore|crores|l|lac|lakh|lakhs|k)?\b",
+        text,
+        re.I,
+    )
     if not match:
         return None
-    amount = float(match.group(1))
+    amount = float(match.group(1).replace(",", ""))
     unit = (match.group(2) or "").lower()
-    if unit in {"cr", "crore"}:
+    if unit in {"cr", "crore", "crores"}:
         amount *= 10_000_000
     elif unit in {"l", "lac", "lakh", "lakhs"}:
         amount *= 100_000
@@ -135,7 +145,20 @@ def _extract_due_date(text: str, received_at: datetime | None) -> date | None:
             return date.fromisoformat(iso.group(1))
         except ValueError:
             return None
-    named = re.search(r"\b([0-3]?\d)\s+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(20\d{2})\b", text, re.I)
+    numeric = re.search(r"\b([0-3]?\d)[/-]([01]?\d)[/-](20\d{2})\b", text)
+    if numeric:
+        try:
+            day, month, year = (int(value) for value in numeric.groups())
+            return date(year, month, day)
+        except ValueError:
+            pass
+    named = re.search(
+        r"\b([0-3]?\d)(?:st|nd|rd|th)?\s*(?:ko\s+)?"
+        r"(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|"
+        r"sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(20\d{2})\b",
+        text,
+        re.I,
+    )
     if named:
         try:
             return datetime.strptime(" ".join(named.groups()), "%d %B %Y").date()
@@ -157,5 +180,10 @@ def _extract_due_date(text: str, received_at: datetime | None) -> date | None:
 
 
 def _extract_company(text: str) -> str | None:
-    match = re.search(r"(?:company|organisation|organization)\s*(?:name)?\s*[:\-]\s*([A-Z][A-Za-z0-9 &.-]{2,60})", text)
+    match = re.search(
+        r"(?:company|organisation|organization)\s*(?:name)?\s*[:\-]\s*"
+        r"([A-Za-z][A-Za-z0-9 &'-]{1,60}?)(?=[.;,\n]|$)",
+        text,
+        re.I,
+    )
     return match.group(1).strip(" .") if match else None

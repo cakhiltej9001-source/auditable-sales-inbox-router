@@ -53,7 +53,9 @@ def _priority(extraction: ExtractionResult, received_at: datetime) -> TaskPriori
     if extraction.category == "finance" and any(token in " ".join(extraction.signals).lower() for token in ["overdue", "past due"]):
         return "high"
     if extraction.due_date is None:
-        return "low"
+        # Challenge examples treat coordination-heavy alliance and ambiguous
+        # multi-intent requests as medium even without an explicit deadline.
+        return "medium" if extraction.category in {"alliances", "triage"} else "low"
     due = datetime.combine(extraction.due_date, time.min, tzinfo=received_at.tzinfo or timezone.utc)
     if due <= received_at + timedelta(hours=72):
         return "high"

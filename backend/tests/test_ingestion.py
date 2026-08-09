@@ -108,3 +108,68 @@ def test_same_email_id_is_scoped_by_candidate(tmp_path):
     assert second.status == "created"
     assert len(session.exec(select(ProcessedEmail)).all()) == 2
     assert len(session.exec(select(TaskRecord)).all()) == 2
+
+
+def test_acknowledgement_only_reply_updates_without_rerouting(tmp_path):
+    session = _session(tmp_path)
+    service = _service(session)
+    first = EmailIn(
+        email_id="ack-1",
+        thread_id="ack-thread",
+        from_email="buyer@acme.com",
+        subject="Enterprise RFP",
+        body="Company: Acme Industries. Please submit an RFP proposal. Budget INR 18L. Deadline 2026-08-10.",
+    )
+    reply = EmailIn(
+        email_id="ack-2",
+        thread_id="ack-thread",
+        message_index=1,
+        is_reply=True,
+        from_email="buyer@acme.com",
+        subject="Re: Enterprise RFP",
+        body="Looks good, please proceed.",
+    )
+
+    service.ingest_email(first)
+    result = service.ingest_email(reply)
+    task = session.exec(select(TaskRecord)).one()
+
+    assert result.status == "updated"
+    assert task.assignee_id == "u_aarti"
+    assert task.category == "enterprise_rfp"
+    assert task.deal_value_inr == 1_800_000
+    assert task.company == "Acme Industries"
+    acknowledgement_audit = session.exec(
+        select(ProcessedEmail).where(ProcessedEmail.source_email_id == "ack-2")
+    ).one()
+    assert "Acknowledgement-only reply" in acknowledgement_audit.reason
+
+
+def test_partial_reply_preserves_supported_thread_facts(tmp_path):
+    session = _session(tmp_path)
+    service = _service(session)
+    first = EmailIn(
+        email_id="partial-1",
+        thread_id="partial-thread",
+        from_email="buyer@acme.com",
+        subject="Enterprise RFP",
+        body="Company: Acme Industries. Please submit an RFP proposal. Budget INR 18L. Deadline 2026-08-20.",
+    )
+    reply = EmailIn(
+        email_id="partial-2",
+        thread_id="partial-thread",
+        message_index=1,
+        is_reply=True,
+        from_email="buyer@acme.com",
+        subject="Re: Enterprise RFP",
+        body="Please send the revised RFP proposal.",
+    )
+
+    service.ingest_email(first)
+    service.ingest_email(reply)
+    task = session.exec(select(TaskRecord)).one()
+
+    assert task.company == "Acme Industries"
+    assert task.deal_value_inr == 1_800_000
+    assert task.due_date.isoformat() == "2026-08-20"
+    assert task.priority == "medium"

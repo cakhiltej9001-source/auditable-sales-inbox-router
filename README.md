@@ -8,7 +8,7 @@
 
 **Frontend:** https://auditable-sales-inbox-router-1.onrender.com
 
-An auditable sales-inbox agent : It extracts grounded facts with Gemini when configured, applies deterministic business rules, prevents replay duplicates, reconciles thread replies, persists every decision, and answers analytics questions only from stored data.
+An auditable sales-inbox agent: it extracts grounded facts with Gemini when configured, applies deterministic business rules, prevents replay duplicates, reconciles thread replies, persists every decision, and answers analytics questions only from stored data.
 
 ## Quick start — three commands
 
@@ -25,7 +25,7 @@ On Windows, copy `.env.example` to `.env` in Explorer or use `Copy-Item .env.exa
 1. Accepts the exact inbox schema through synchronous `POST /ingest` in batches of at most 100.
 2. Strips HTML and quoted reply history, rejects obvious noise, then uses Gemini structured output or a deterministic fallback extractor.
 3. Applies fixed precedence in Python: government/PSU → enterprise value → finance → marketing → alliances → SMB → triage.
-4. Writes the task and audit row in PostgreSQL. Replayed `email_id` values are ignored; new messages on an existing thread update its task.
+4. Writes through one shared task persistence service and stores an audit row in PostgreSQL. Replayed `email_id` values are ignored; new messages on an existing thread merge into its task without erasing previously supported facts.
 5. Serves aggregate and conversational answers from stored classifications rather than asking a model to invent numbers.
 
 ## Required API contract
@@ -40,6 +40,7 @@ All routes use the backend URL above and require no authentication:
 - `POST /ingest` — synchronous batch ingest, maximum 100
 - `GET /api/tasks` — enriched frontend task list
 - `GET /api/stats` — processed/created/updated/skipped/spurious aggregates by category and run
+- `PATCH /api/tasks/{task_id}/spurious` — record or clear an auditable reviewer spurious flag
 - `POST /api/chat` — grounded analytics with `supporting_data`
 
 Example:
@@ -67,7 +68,7 @@ Frontend:
 
 ```powershell
 cd frontend
-npm install
+npm ci
 npm run build
 npm run dev
 ```
@@ -78,6 +79,8 @@ Evaluation:
 cd backend
 python ../eval/eval.py
 ```
+
+The checked-in evaluator currently runs 69 deterministic cases, including nine challenge-trap cases. `EVALS.md` clearly separates these regression fixtures from the unavailable original `inbox.json` corpus.
 
 ## Environment and deployment
 
@@ -101,7 +104,7 @@ Render frontend static-site settings:
 
 ```text
 Root Directory: frontend
-Build Command: npm install && npm run build
+Build Command: npm ci && npm run build
 Publish Directory: dist
 Environment: VITE_API_BASE_URL=https://auditable-sales-inbox-router.onrender.com
 ```

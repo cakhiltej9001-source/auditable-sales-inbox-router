@@ -4,10 +4,11 @@ import json
 from sqlmodel import Session, select
 
 from app.models import ProcessedEmail, ProcessingStatus, SkippedEmail, TaskRecord, utc_now
-from app.schemas import EmailIn, IngestItemResult
+from app.schemas import EmailIn, IngestItemResult, TaskCreate
 from app.services.extractor import Extractor
 from app.services.preprocess import normalize_email, obvious_skip_type
 from app.services.routing import route_extraction
+from app.services.tasks import TaskWriteService
 
 
 class IngestionService:
@@ -42,12 +43,28 @@ class IngestionService:
                 reason="Email was already processed; replay ignored without creating another task.",
             )
 
+        existing_thread_task = self.session.exec(
+            select(TaskRecord).where(
+                TaskRecord.candidate_id == candidate_id,
+                TaskRecord.thread_id == email.thread_id,
+            ).order_by(TaskRecord.updated_at.desc())
+        ).first()
+
         skip = obvious_skip_type(email.subject, email.body)
         if skip:
             return self._persist_skip(email, candidate_id, run_id, skip[0], skip[1], None, None)
 
         extraction = self.extractor.extract(email)
         routing = route_extraction(extraction, email.received_at)
+        if existing_thread_task and _is_acknowledgement_reply(email):
+            return self._persist_acknowledgement(
+                email,
+                candidate_id,
+                run_id,
+                existing_thread_task,
+                extraction,
+                routing,
+            )
         if routing.should_skip:
             return self._persist_skip(
                 email,
@@ -59,23 +76,32 @@ class IngestionService:
                 routing.model_dump_json(),
             )
 
-        existing_thread_task = self.session.exec(
-            select(TaskRecord).where(
-                TaskRecord.candidate_id == candidate_id,
-                TaskRecord.thread_id == email.thread_id,
-            ).order_by(TaskRecord.updated_at.desc())
-        ).first()
         payload = _build_task_payload(candidate_id, email, extraction, routing)
 
         if existing_thread_task:
+            previous_priority = existing_thread_task.priority
             existing_thread_task.assignee_id = routing.assignee_id or existing_thread_task.assignee_id
             existing_thread_task.category = routing.category or existing_thread_task.category
             existing_thread_task.priority = routing.priority
             existing_thread_task.title = payload["title"]
             existing_thread_task.description = payload["description"]
-            existing_thread_task.company = extraction.company_name
-            existing_thread_task.deal_value_inr = extraction.deal_value_inr
-            existing_thread_task.due_date = extraction.due_date
+            if extraction.company_name is not None:
+                existing_thread_task.company = extraction.company_name
+            if extraction.deal_value_inr is not None:
+                existing_thread_task.deal_value_inr = extraction.deal_value_inr
+            if extraction.due_date is not None:
+                existing_thread_task.due_date = extraction.due_date
+            if not _has_priority_evidence(extraction.signals, extraction.due_date):
+                existing_thread_task.priority = _preserve_higher_priority(
+                    previous_priority,
+                    routing.priority,
+                )
+            payload.update(
+                priority=existing_thread_task.priority,
+                company_name=existing_thread_task.company,
+                deal_value_inr=existing_thread_task.deal_value_inr,
+                due_date=existing_thread_task.due_date.isoformat() if existing_thread_task.due_date else None,
+            )
             existing_thread_task.confidence = extraction.confidence
             existing_thread_task.reasoning = routing.reason
             existing_thread_task.update_count += 1
@@ -91,30 +117,17 @@ class IngestionService:
                 status="updated",
                 task_id=existing_thread_task.external_task_id,
                 assignee_id=routing.assignee_id,
-                priority=routing.priority,
+                priority=existing_thread_task.priority,
                 reason="Existing thread task updated; quoted history was excluded from extraction.",
             )
 
-        task = TaskRecord(
+        task_input = TaskCreate.model_validate(payload)
+        task, _ = TaskWriteService(self.session).create(
+            task_input,
             external_task_id=_stable_task_id(candidate_id, email.thread_id),
-            candidate_id=candidate_id,
-            thread_id=email.thread_id,
-            source_email_id=email.email_id,
-            assignee_id=routing.assignee_id or "u_triage",
-            category=routing.category or "triage",
-            priority=routing.priority,
-            title=payload["title"],
-            description=payload["description"],
-            company=extraction.company_name,
-            deal_value_inr=extraction.deal_value_inr,
-            due_date=extraction.due_date,
-            confidence=extraction.confidence,
             reasoning=routing.reason,
-            task_payload_json=json.dumps(payload, default=str),
             supporting_data_json=json.dumps(_supporting_data(email, extraction, routing), default=str),
         )
-        self.session.add(task)
-        self.session.flush()
         self._persist_processed(email, candidate_id, run_id, ProcessingStatus.created, task.id, routing.reason, extraction, routing)
         self.session.commit()
         return IngestItemResult(
@@ -181,6 +194,40 @@ class IngestionService:
             )
         )
 
+    def _persist_acknowledgement(self, email, candidate_id, run_id, task, extraction, routing):
+        reason = "Acknowledgement-only reply reconciled with the existing thread task; prior task facts were preserved."
+        task.update_count += 1
+        task.updated_at = utc_now()
+        self.session.add(task)
+        self.session.add(
+            ProcessedEmail(
+                candidate_id=candidate_id,
+                run_id=run_id,
+                source_email_id=email.email_id,
+                thread_id=email.thread_id,
+                message_index=email.message_index,
+                status=ProcessingStatus.updated,
+                category=task.category,
+                confidence=extraction.confidence,
+                task_record_id=task.id,
+                reason=reason,
+                received_at=email.received_at,
+                raw_email_json=email.model_dump_json(by_alias=True),
+                extraction_json=extraction.model_dump_json(),
+                routing_json=routing.model_dump_json(),
+            )
+        )
+        self.session.commit()
+        return IngestItemResult(
+            source_email_id=email.email_id,
+            thread_id=email.thread_id,
+            status="updated",
+            task_id=task.external_task_id,
+            assignee_id=task.assignee_id,
+            priority=task.priority,
+            reason=reason,
+        )
+
     def _task_id(self, task_record_id: int | None) -> str | None:
         task = self.session.get(TaskRecord, task_record_id) if task_record_id else None
         return task.external_task_id if task else None
@@ -219,3 +266,46 @@ def _supporting_data(email, extraction, routing) -> dict:
         "rule_id": routing.rule_id,
         "reason": routing.reason,
     }
+
+
+def _is_acknowledgement_reply(email: EmailIn) -> bool:
+    if not email.is_reply:
+        return False
+    text = email.body.lower()
+    acknowledgement_tokens = [
+        "looks good",
+        "please proceed",
+        "go ahead",
+        "approved",
+        "acknowledged",
+        "thank you",
+        "thanks",
+        "received",
+    ]
+    business_tokens = [
+        "invoice",
+        "payment",
+        "refund",
+        "sponsor",
+        "campaign",
+        "partner",
+        "reseller",
+        "rfp",
+        "tender",
+        "demo",
+        "pricing",
+        "quote",
+    ]
+    return any(token in text for token in acknowledgement_tokens) and not any(
+        token in text for token in business_tokens
+    )
+
+
+def _has_priority_evidence(signals: list[str], due_date) -> bool:
+    signal_text = " ".join(signals).lower()
+    return due_date is not None or any(token in signal_text for token in ["overdue", "past due"])
+
+
+def _preserve_higher_priority(current: str, proposed: str) -> str:
+    rank = {"low": 0, "medium": 1, "high": 2}
+    return current if rank.get(current, 0) > rank.get(proposed, 0) else proposed
