@@ -27,7 +27,37 @@ def obvious_skip_type(subject: str, body: str) -> tuple[str, str] | None:
         return "out_of_office", "Auto-reply or out-of-office message."
     if any(token in text for token in ["unsubscribe", "newsletter", "weekly digest", "monthly digest"]):
         return "newsletter", "Newsletter or digest content."
-    spam_phrases = ["seo backlinks", "guest post", "buy verified leads", "verified leads", "rank #1", "boost your rankings", "link building package"]
+    spam_phrases = [
+        "seo backlinks",
+        "guest post",
+        "buy verified leads",
+        "verified leads",
+        "rank #1",
+        "boost your rankings",
+        "link building package",
+    ]
     if any(token in text for token in spam_phrases):
         return "vendor_spam", "Unsolicited vendor solicitation or spam."
+    seller_signals = [
+        "we offer",
+        "our services",
+        "we can help",
+        "free audit",
+        "book a call with us",
+        "improve your",
+        "increase your",
+        "not ranking",
+    ]
+    promotion_services = [
+        "seo",
+        "backlink",
+        "content marketing",
+        "webinar promotion",
+        "lead generation",
+        "website traffic",
+        "page 1",
+        "search ranking",
+    ]
+    if any(token in text for token in seller_signals) and any(token in text for token in promotion_services):
+        return "vendor_spam", "Unsolicited vendor pitch directed at the sales inbox."
     return None

@@ -16,6 +16,8 @@ from app.schemas import (
     IngestRequest,
     IngestResponse,
     SkippedOut,
+    SpuriousReview,
+    SpuriousReviewOut,
     TEAM_ROSTER,
     TaskApiOut,
     TaskCreate,
@@ -26,6 +28,7 @@ from app.schemas import (
 from app.services.chat import answer_question
 from app.services.extractor import get_extractor
 from app.services.ingestion import IngestionService
+from app.services.tasks import TaskWriteService
 
 router = APIRouter()
 
@@ -52,30 +55,7 @@ def create_task(payload: dict = Body(...), session: Session = Depends(get_sessio
     if isinstance(task_in, JSONResponse):
         return task_in
     candidate_id = str(task_in.candidate_id).lower()
-    existing = session.exec(select(TaskRecord).where(
-        TaskRecord.candidate_id == candidate_id,
-        TaskRecord.source_email_id == task_in.source_email_id,
-    )).first()
-    if existing:
-        return TaskCreated(task_id=existing.external_task_id, candidate_id=existing.candidate_id, source_email_id=existing.source_email_id, created_at=existing.created_at)
-    task = TaskRecord(
-        external_task_id=f"tsk_{uuid.uuid4().hex[:12]}",
-        candidate_id=candidate_id,
-        source_email_id=task_in.source_email_id,
-        thread_id=task_in.thread_id,
-        title=task_in.title,
-        description=task_in.description,
-        assignee_id=task_in.assignee_id,
-        category=task_in.category,
-        priority=task_in.priority,
-        due_date=task_in.due_date,
-        deal_value_inr=task_in.deal_value_inr,
-        company=task_in.company_name,
-        confidence=task_in.confidence,
-        reasoning="Created through the Task API.",
-        task_payload_json=task_in.model_dump_json(),
-    )
-    session.add(task)
+    task, _ = TaskWriteService(session).create(task_in)
     session.commit()
     session.refresh(task)
     return TaskCreated(task_id=task.external_task_id, candidate_id=task.candidate_id, source_email_id=task.source_email_id, created_at=task.created_at)
@@ -207,6 +187,40 @@ def api_stats(candidate_id: str | None = None, session: Session = Depends(get_se
         "total_pipeline_inr": sum(task.deal_value_inr or 0 for task in tasks),
     }
     return result
+
+
+@router.patch("/api/tasks/{task_id}/spurious", response_model=SpuriousReviewOut)
+def review_spurious_task(
+    task_id: str,
+    payload: SpuriousReview,
+    session: Session = Depends(get_session),
+) -> SpuriousReviewOut:
+    task = _task_or_404(session, task_id)
+    candidate_id = str(payload.candidate_id).lower()
+    if task.candidate_id != candidate_id:
+        raise HTTPException(status_code=404, detail="Task not found")
+    audits = session.exec(
+        select(ProcessedEmail).where(
+            ProcessedEmail.task_record_id == task.id,
+            ProcessedEmail.candidate_id == candidate_id,
+        ).order_by(ProcessedEmail.processed_at.asc())
+    ).all()
+    audit = next((row for row in audits if row.status == ProcessingStatus.created), audits[0] if audits else None)
+    if audit is None:
+        raise HTTPException(status_code=409, detail="Task has no ingestion audit record")
+    reviewed_at = utc_now()
+    audit.spurious_flagged = payload.spurious_flagged
+    audit.spurious_review_reason = payload.reason
+    audit.spurious_reviewed_at = reviewed_at
+    session.add(audit)
+    session.commit()
+    return SpuriousReviewOut(
+        task_id=task.external_task_id,
+        source_email_id=audit.source_email_id,
+        spurious_flagged=audit.spurious_flagged,
+        reason=audit.spurious_review_reason,
+        reviewed_at=reviewed_at,
+    )
 
 
 @router.post("/api/chat", response_model=ChatResponse)

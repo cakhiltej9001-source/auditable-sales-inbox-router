@@ -42,6 +42,19 @@ export function askQuestion(query: string, emailIds: string[]): Promise<ChatResp
   });
 }
 
+export function reviewSpuriousTask(taskId: string, spuriousFlagged: boolean): Promise<void> {
+  return request<void>(`/api/tasks/${encodeURIComponent(taskId)}/spurious`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      candidate_id: CANDIDATE_ID,
+      spurious_flagged: spuriousFlagged,
+      reason: spuriousFlagged
+        ? "Reviewer marked this routed task as spurious from the dashboard."
+        : "Reviewer cleared the spurious flag after re-checking the source email."
+    })
+  });
+}
+
 export async function ingestEmails(emails: EmailInput[]): Promise<IngestResponse> {
   const total: IngestResponse = { processed: 0, tasks_created: 0, tasks_updated: 0, skipped: 0, errors: [] };
   for (let start = 0; start < emails.length; start += 100) {

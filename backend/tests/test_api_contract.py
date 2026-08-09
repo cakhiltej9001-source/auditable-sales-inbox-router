@@ -93,3 +93,36 @@ def test_legacy_values_are_normalized_for_contract_responses():
     assert _normalized_category("smb") == "smb_enquiry"
     assert _normalized_category("unknown") == "triage"
     assert _normalized_priority("normal") == "low"
+
+
+def test_spurious_review_updates_stats_and_chat(tmp_path):
+    client = _client(tmp_path)
+    payload = {
+        "candidate_id": "cakhiltej9001@gmail.com",
+        "emails": [{
+            "email_id": "spurious-1", "thread_id": "spurious-thread", "message_index": 0,
+            "from_name": "Vendor", "from_email": "vendor@example.com", "to": "sales@company.com", "cc": [],
+            "subject": "Product demo", "body": "Please schedule a demo. Budget INR 5L.",
+            "received_at": "2026-08-08T10:00:00Z", "attachments": [], "is_reply": False,
+        }],
+    }
+    assert client.post("/ingest", json=payload).status_code == 200
+    task_id = client.get("/api/tasks", params={"candidate_id": payload["candidate_id"]}).json()[0]["task_id"]
+
+    reviewed = client.patch(
+        f"/api/tasks/{task_id}/spurious",
+        json={
+            "candidate_id": payload["candidate_id"],
+            "spurious_flagged": True,
+            "reason": "Manual review found an unsolicited vendor pitch.",
+        },
+    )
+    assert reviewed.status_code == 200
+    assert reviewed.json()["spurious_flagged"] is True
+    stats = client.get("/api/stats", params={"candidate_id": payload["candidate_id"]}).json()
+    assert stats["spurious_flagged"] == 1
+    chat = client.post(
+        "/api/chat",
+        json={"candidate_id": payload["candidate_id"], "query": "What is the spurious rate?", "email_ids": ["spurious-1"]},
+    ).json()
+    assert chat["supporting_data"]["spurious_rate"] == 1.0

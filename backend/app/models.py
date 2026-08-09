@@ -71,6 +71,8 @@ class ProcessedEmail(SQLModel, table=True):
     category: str = Field(default="not_actionable", index=True)
     confidence: float = 0
     spurious_flagged: bool = Field(default=False, index=True)
+    spurious_review_reason: Optional[str] = None
+    spurious_reviewed_at: Optional[datetime] = None
     task_record_id: Optional[int] = Field(default=None, foreign_key="taskrecord.id")
     reason: str
     received_at: Optional[datetime] = Field(default=None, index=True)

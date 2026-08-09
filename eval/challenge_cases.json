@@ -1,0 +1,100 @@
+[
+  {
+    "name": "worked_enterprise_indian_format",
+    "email": {
+      "email_id": "challenge-001",
+      "thread_id": "challenge-thread-001",
+      "message_index": 0,
+      "from_name": "Suresh Kulkarni",
+      "from_email": "suresh@meridiansteel.co.in",
+      "to": ["sales@example.com"],
+      "cc": [],
+      "subject": "Enterprise document-management RFP",
+      "body": "Company: Meridian Steel. Please submit a proposal. Budget Rs. 25,00,000; deadline 12th August 2026.",
+      "received_at": "2026-08-08T09:00:00Z",
+      "attachments": ["rfp.pdf"],
+      "is_reply": false
+    },
+    "expected": {"status": "created", "category": "enterprise_rfp", "assignee_id": "u_aarti", "priority": "medium", "company_name": "Meridian Steel", "deal_value_inr": 2500000, "due_date": "2026-08-12"}
+  },
+  {
+    "name": "worked_government_override",
+    "email": {
+      "email_id": "challenge-002", "thread_id": "challenge-thread-002", "message_index": 0,
+      "from_name": "Procurement", "from_email": "procurement@psu.example", "to": "sales@example.com", "cc": [],
+      "subject": "PSU tender", "body": "Government PSU tender. Please quote INR 4,00,000.",
+      "received_at": "2026-08-08T09:00:00Z", "attachments": [], "is_reply": false
+    },
+    "expected": {"status": "created", "category": "enterprise_rfp", "assignee_id": "u_aarti", "priority": "low", "deal_value_inr": 400000}
+  },
+  {
+    "name": "worked_smb_demo",
+    "email": {
+      "email_id": "challenge-003", "thread_id": "challenge-thread-003", "message_index": 0,
+      "from_name": "Founder", "from_email": "founder@smallco.example", "to": "sales@example.com", "cc": [],
+      "subject": "Product demo", "body": "Could you schedule a demo? Budget INR 6L.",
+      "received_at": "2026-08-08T09:00:00Z", "attachments": [], "is_reply": false
+    },
+    "expected": {"status": "created", "category": "smb_enquiry", "assignee_id": "u_rohit", "priority": "low", "deal_value_inr": 600000}
+  },
+  {
+    "name": "worked_marketing_sponsorship_value",
+    "email": {
+      "email_id": "challenge-004", "thread_id": "challenge-thread-004", "message_index": 0,
+      "from_name": "Events", "from_email": "events@growth.example", "to": "sales@example.com", "cc": [],
+      "subject": "Webinar sponsorship", "body": "Company: Growth Collective. We would like the INR 4,00,000 sponsorship package.",
+      "received_at": "2026-08-08T09:00:00Z", "attachments": [], "is_reply": false
+    },
+    "expected": {"status": "created", "category": "marketing", "assignee_id": "u_meera", "priority": "low", "company_name": "Growth Collective", "deal_value_inr": 400000}
+  },
+  {
+    "name": "worked_finance_invoice_not_pipeline",
+    "email": {
+      "email_id": "challenge-005", "thread_id": "challenge-thread-005", "message_index": 0,
+      "from_name": "Accounts", "from_email": "accounts@client.example", "to": "sales@example.com", "cc": [],
+      "subject": "Invoice overdue", "body": "Invoice Rs. 6,50,000 is overdue. Please resolve the payment issue.",
+      "received_at": "2026-08-08T09:00:00Z", "attachments": [], "is_reply": false
+    },
+    "expected": {"status": "created", "category": "finance", "assignee_id": "u_divya", "priority": "high", "deal_value_inr": null}
+  },
+  {
+    "name": "worked_alliance_medium",
+    "email": {
+      "email_id": "challenge-006", "thread_id": "challenge-thread-006", "message_index": 0,
+      "from_name": "Partner", "from_email": "partner@channel.example", "to": "sales@example.com", "cc": [],
+      "subject": "Reseller partnership", "body": "Could we discuss a reseller partnership?",
+      "received_at": "2026-08-08T09:00:00Z", "attachments": [], "is_reply": false
+    },
+    "expected": {"status": "created", "category": "alliances", "assignee_id": "u_karan", "priority": "medium"}
+  },
+  {
+    "name": "worked_directional_vendor_spam",
+    "email": {
+      "email_id": "challenge-007", "thread_id": "challenge-thread-007", "message_index": 0,
+      "from_name": "Growth Vendor", "from_email": "vendor@agency.example", "to": "sales@example.com", "cc": [],
+      "subject": "Your website is not ranking on page 1", "body": "We offer content marketing and webinar promotion. Book a free audit.",
+      "received_at": "2026-08-08T09:00:00Z", "attachments": [], "is_reply": false
+    },
+    "expected": {"status": "skipped", "category": "vendor_spam", "assignee_id": null, "priority": null}
+  },
+  {
+    "name": "worked_ambiguous_two_intents",
+    "email": {
+      "email_id": "challenge-008", "thread_id": "challenge-thread-008", "message_index": 0,
+      "from_name": "Customer", "from_email": "customer@example.com", "to": "sales@example.com", "cc": [],
+      "subject": "Partnership and invoice", "body": "Please discuss a partnership and help with an invoice.",
+      "received_at": "2026-08-08T09:00:00Z", "attachments": [], "is_reply": false
+    },
+    "expected": {"status": "created", "category": "triage", "assignee_id": "u_triage", "priority": "medium"}
+  },
+  {
+    "name": "worked_hinglish_crore_date",
+    "email": {
+      "email_id": "challenge-009", "thread_id": "challenge-thread-009", "message_index": 0,
+      "from_name": "Bharat Systems", "from_email": "buyer@bharat.example", "to": "sales@example.com", "cc": [],
+      "subject": "RFP budget update", "body": "Company: Bharat Systems. Budget INR 1.2 cr hai aur deadline 20th ko August 2026.",
+      "received_at": "2026-08-08T09:00:00Z", "attachments": [], "is_reply": false
+    },
+    "expected": {"status": "created", "category": "enterprise_rfp", "assignee_id": "u_aarti", "priority": "medium", "company_name": "Bharat Systems", "deal_value_inr": 12000000, "due_date": "2026-08-20"}
+  }
+]

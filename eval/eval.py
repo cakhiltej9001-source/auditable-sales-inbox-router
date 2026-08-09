@@ -7,14 +7,16 @@ from sqlmodel import Session, SQLModel, create_engine, select
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 
-from app.models import ProcessedEmail  # noqa: E402
+from app.models import ProcessedEmail, TaskRecord  # noqa: E402
 from app.schemas import EmailIn  # noqa: E402
 from app.services.extractor import HeuristicExtractor  # noqa: E402
 from app.services.ingestion import IngestionService  # noqa: E402
 
 
 def main() -> int:
-    labels = json.loads((Path(__file__).parent / "labels.json").read_text(encoding="utf-8"))
+    eval_dir = Path(__file__).parent
+    labels = json.loads((eval_dir / "labels.json").read_text(encoding="utf-8"))
+    labels.extend(json.loads((eval_dir / "challenge_cases.json").read_text(encoding="utf-8")))
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False})
     SQLModel.metadata.create_all(engine)
     failures: list[dict] = []
@@ -29,6 +31,7 @@ def main() -> int:
             expected = item["expected"]
             actual_category = audit.category
             expected_category = expected["category"]
+            task = session.get(TaskRecord, audit.task_record_id) if audit.task_record_id else None
             if actual_category == expected_category:
                 counts[expected_category]["tp"] += 1
             else:
@@ -39,6 +42,7 @@ def main() -> int:
                 and result.assignee_id == expected["assignee_id"]
                 and result.priority == expected["priority"]
                 and actual_category == expected_category
+                and _expected_task_fields_match(expected, task)
             )
             if not ok:
                 failures.append({
@@ -50,6 +54,9 @@ def main() -> int:
                         "assignee_id": result.assignee_id,
                         "priority": result.priority,
                         "reason": result.reason,
+                        "company_name": task.company if task else None,
+                        "deal_value_inr": task.deal_value_inr if task else None,
+                        "due_date": task.due_date.isoformat() if task and task.due_date else None,
                     },
                 })
 
@@ -65,6 +72,17 @@ def main() -> int:
     output = {"passed": len(labels) - len(failures), "total": len(labels), "per_category": metrics, "failures": failures}
     print(json.dumps(output, indent=2))
     return 0 if not failures else 1
+
+
+def _expected_task_fields_match(expected: dict, task: TaskRecord | None) -> bool:
+    if not any(field in expected for field in ["company_name", "deal_value_inr", "due_date"]):
+        return True
+    actual = {
+        "company_name": task.company if task else None,
+        "deal_value_inr": task.deal_value_inr if task else None,
+        "due_date": task.due_date.isoformat() if task and task.due_date else None,
+    }
+    return all(actual[field] == expected[field] for field in actual if field in expected)
 
 
 if __name__ == "__main__":
