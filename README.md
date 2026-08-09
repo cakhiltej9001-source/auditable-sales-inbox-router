@@ -2,11 +2,11 @@
 
 **candidate_id:** `cakhiltej9001@gmail.com`
 
+**Frontend:** https://auditable-sales-inbox-router-1.onrender.com
+
 **Backend / ingest / Task API:** https://auditable-sales-inbox-router.onrender.com
 
 **Chat endpoint:** https://auditable-sales-inbox-router.onrender.com/api/chat
-
-**Frontend:** https://auditable-sales-inbox-router-1.onrender.com
 
 An auditable sales-inbox agent: it extracts grounded facts with Gemini when configured, applies deterministic business rules, prevents replay duplicates, reconciles thread replies, persists every decision, and answers analytics questions only from stored data.
 
