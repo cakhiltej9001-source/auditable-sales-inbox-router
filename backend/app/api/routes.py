@@ -9,6 +9,7 @@ from sqlmodel import Session, select
 
 from app.core.config import get_settings
 from app.core.database import get_session
+from app.core.identity import normalize_candidate_id
 from app.models import IngestRun, ProcessedEmail, ProcessingStatus, SkippedEmail, TaskRecord, utc_now
 from app.schemas import (
     ChatRequest,
@@ -54,7 +55,7 @@ def create_task(payload: dict = Body(...), session: Session = Depends(get_sessio
     task_in = _validate_task_payload(TaskCreate, payload)
     if isinstance(task_in, JSONResponse):
         return task_in
-    candidate_id = str(task_in.candidate_id).lower()
+    candidate_id = normalize_candidate_id(task_in.candidate_id)
     task, _ = TaskWriteService(session).create(task_in)
     session.commit()
     session.refresh(task)
@@ -86,7 +87,7 @@ def list_task_api(
     assignee_id: str | None = None,
     session: Session = Depends(get_session),
 ):
-    statement = select(TaskRecord).where(TaskRecord.candidate_id == candidate_id.lower())
+    statement = select(TaskRecord).where(TaskRecord.candidate_id == normalize_candidate_id(candidate_id))
     if thread_id:
         statement = statement.where(TaskRecord.thread_id == thread_id)
     if source_email_id:
@@ -124,7 +125,7 @@ def ingest(payload: IngestRequest, session: Session = Depends(get_session)) -> I
     errors = []
     for email in payload.emails:
         try:
-            results.append(service.ingest_email(email, str(payload.candidate_id).lower(), run_id))
+            results.append(service.ingest_email(email, normalize_candidate_id(payload.candidate_id), run_id))
         except Exception as exc:
             session.rollback()
             errors.append({"email_id": email.email_id, "error": type(exc).__name__, "message": str(exc)[:300]})
@@ -137,7 +138,7 @@ def ingest(payload: IngestRequest, session: Session = Depends(get_session)) -> I
     )
     session.add(IngestRun(
         run_id=run_id,
-        candidate_id=str(payload.candidate_id).lower(),
+        candidate_id=normalize_candidate_id(payload.candidate_id),
         processed=response.processed,
         tasks_created=response.tasks_created,
         tasks_updated=response.tasks_updated,
@@ -151,14 +152,14 @@ def ingest(payload: IngestRequest, session: Session = Depends(get_session)) -> I
 
 @router.get("/api/tasks", response_model=list[TaskOut])
 def api_tasks(candidate_id: str | None = None, session: Session = Depends(get_session)) -> list[TaskOut]:
-    candidate = (candidate_id or get_settings().candidate_id).lower()
+    candidate = normalize_candidate_id(candidate_id or get_settings().candidate_id)
     tasks = session.exec(select(TaskRecord).where(TaskRecord.candidate_id == candidate).order_by(TaskRecord.updated_at.desc())).all()
     return [_task_out(task) for task in tasks]
 
 
 @router.get("/api/stats")
 def api_stats(candidate_id: str | None = None, session: Session = Depends(get_session)) -> dict:
-    candidate = (candidate_id or get_settings().candidate_id).lower()
+    candidate = normalize_candidate_id(candidate_id or get_settings().candidate_id)
     processed = session.exec(select(ProcessedEmail).where(ProcessedEmail.candidate_id == candidate)).all()
     tasks = session.exec(select(TaskRecord).where(TaskRecord.candidate_id == candidate)).all()
     runs = session.exec(select(IngestRun).where(IngestRun.candidate_id == candidate).order_by(IngestRun.created_at.desc())).all()
@@ -196,7 +197,7 @@ def review_spurious_task(
     session: Session = Depends(get_session),
 ) -> SpuriousReviewOut:
     task = _task_or_404(session, task_id)
-    candidate_id = str(payload.candidate_id).lower()
+    candidate_id = normalize_candidate_id(payload.candidate_id)
     if task.candidate_id != candidate_id:
         raise HTTPException(status_code=404, detail="Task not found")
     audits = session.exec(
@@ -225,7 +226,7 @@ def review_spurious_task(
 
 @router.post("/api/chat", response_model=ChatResponse)
 def api_chat(payload: ChatRequest, session: Session = Depends(get_session)) -> ChatResponse:
-    answer, supporting_data, intent = answer_question(session, str(payload.candidate_id).lower(), payload.query, payload.email_ids)
+    answer, supporting_data, intent = answer_question(session, normalize_candidate_id(payload.candidate_id), payload.query, payload.email_ids)
     return ChatResponse(answer=answer, supporting_data=supporting_data, query_intent=intent)
 
 
@@ -237,7 +238,7 @@ def legacy_stats(candidate_id: str | None = None, session: Session = Depends(get
 
 @router.get("/skipped", response_model=list[SkippedOut])
 def list_skipped(candidate_id: str | None = None, session: Session = Depends(get_session)) -> list[SkippedOut]:
-    candidate = (candidate_id or get_settings().candidate_id).lower()
+    candidate = normalize_candidate_id(candidate_id or get_settings().candidate_id)
     rows = session.exec(select(SkippedEmail).where(SkippedEmail.candidate_id == candidate).order_by(SkippedEmail.created_at.desc())).all()
     return [SkippedOut(source_email_id=r.source_email_id, thread_id=r.thread_id, skip_type=r.skip_type, reason=r.reason, subject=r.subject, from_email=r.from_email, received_at=r.received_at) for r in rows]
 

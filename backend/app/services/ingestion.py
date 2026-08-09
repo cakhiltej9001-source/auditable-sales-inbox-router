@@ -3,6 +3,7 @@ import json
 
 from sqlmodel import Session, select
 
+from app.core.identity import normalize_candidate_id
 from app.models import ProcessedEmail, ProcessingStatus, SkippedEmail, TaskRecord, utc_now
 from app.schemas import EmailIn, IngestItemResult, TaskCreate
 from app.services.extractor import Extractor
@@ -22,7 +23,7 @@ class IngestionService:
         candidate_id: str = "cakhiltej9001@gmail.com",
         run_id: str = "manual",
     ) -> IngestItemResult:
-        candidate_id = candidate_id.lower()
+        candidate_id = normalize_candidate_id(candidate_id)
         email = normalize_email(email)
         existing_email = self.session.exec(
             select(ProcessedEmail).where(

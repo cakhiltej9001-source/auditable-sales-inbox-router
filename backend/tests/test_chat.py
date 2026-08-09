@@ -79,7 +79,10 @@ def _session(tmp_path: Path) -> Session:
     ("question", "intent", "supporting_key"),
     [
         ("How many proposal or RFP-related emails?", "enterprise_rfp_count", "enterprise_rfp"),
+        ("How many RFPs are there?", "enterprise_rfp_count", "enterprise_rfp"),
+        ("Compare proposals versus marketing", "rfp_vs_marketing", "marketing"),
         ("Marketing versus spam?", "marketing_vs_spam", "skipped_marketing_lookalike_spam"),
+        ("How much marketing did we route and how much junk did we ignore?", "marketing_vs_spam", "skipped_marketing_lookalike_spam"),
         ("Why are tasks in triage?", "triage_tasks", "items"),
         ("What is the spurious rate?", "spurious_rate", "spurious_rate"),
         ("How many GST refund emails?", "gst_refund_count", "gst_refund_count"),
@@ -89,7 +92,9 @@ def _session(tmp_path: Path) -> Session:
         ("How many high priority tasks?", "high_priority_tasks", "high_priority_count"),
         ("Show counts by assignee", "count_by_assignee", "by_assignee"),
         ("Which threads were updated more than once?", "repeated_thread_updates", "threads_updated_multiple_times"),
+        ("Did any thread change multiple times?", "repeated_thread_updates", "threads_updated_multiple_times"),
         ("Send an email to the owner", "out_of_scope", None),
+        ("Draft a message for Aarti", "out_of_scope", None),
     ],
 )
 def test_grounded_chat_intents(tmp_path, question, intent, supporting_key):

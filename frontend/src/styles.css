@@ -376,6 +376,70 @@ td span {
   padding: 0 12px;
 }
 
+.sampleQuestions {
+  margin-top: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.sampleQuestionsHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sampleQuestionsHeader strong {
+  font-size: 13px;
+}
+
+.sampleQuestionsHeader span {
+  color: #66736c;
+  font-size: 12px;
+}
+
+.sampleQuestionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+button.sampleQuestion {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding: 9px 10px;
+  border: 1px solid #d8dfda;
+  background: #f8faf7;
+  color: #26372f;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+button.sampleQuestion:hover:not(:disabled) {
+  border-color: #1c654c;
+  background: #edf8f2;
+}
+
+button.sampleQuestion span {
+  flex: 0 0 22px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #dff5e9;
+  color: #15543f;
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .chatAnswer {
   margin-top: 16px;
   display: grid;
@@ -440,6 +504,15 @@ pre {
   .chatForm,
   .inputActions {
     display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .sampleQuestionsHeader {
+    display: grid;
+    gap: 3px;
+  }
+
+  .sampleQuestionGrid {
     grid-template-columns: 1fr;
   }
 }

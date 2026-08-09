@@ -96,5 +96,35 @@
       "received_at": "2026-08-08T09:00:00Z", "attachments": [], "is_reply": false
     },
     "expected": {"status": "created", "category": "enterprise_rfp", "assignee_id": "u_aarti", "priority": "medium", "company_name": "Bharat Systems", "deal_value_inr": 12000000, "due_date": "2026-08-20"}
+  },
+  {
+    "name": "regression_high_value_sponsorship_keeps_marketing_owner",
+    "email": {
+      "email_id": "challenge-010", "thread_id": "challenge-thread-010", "message_index": 0,
+      "from_name": "Growth Collective", "from_email": "events@growth.example", "to": "sales@example.com", "cc": [],
+      "subject": "Conference sponsorship", "body": "Company: Growth Collective. We would like the INR 15,00,000 sponsorship package.",
+      "received_at": "2026-08-08T09:00:00Z", "attachments": [], "is_reply": false
+    },
+    "expected": {"status": "created", "category": "marketing", "assignee_id": "u_meera", "priority": "low", "company_name": "Growth Collective", "deal_value_inr": 1500000}
+  },
+  {
+    "name": "regression_high_value_reseller_keeps_alliances_owner",
+    "email": {
+      "email_id": "challenge-011", "thread_id": "challenge-thread-011", "message_index": 0,
+      "from_name": "Zenith Cloud Partners", "from_email": "partner@zenith.example", "to": "sales@example.com", "cc": [],
+      "subject": "Reseller partnership", "body": "Company: Zenith Cloud Partners. Could we discuss a reseller partnership priced at INR 20L?",
+      "received_at": "2026-08-08T09:00:00Z", "attachments": [], "is_reply": false
+    },
+    "expected": {"status": "created", "category": "alliances", "assignee_id": "u_karan", "priority": "medium", "company_name": "Zenith Cloud Partners", "deal_value_inr": 2000000}
+  },
+  {
+    "name": "regression_priced_competing_intents_remain_triage",
+    "email": {
+      "email_id": "challenge-012", "thread_id": "challenge-thread-012", "message_index": 0,
+      "from_name": "Strategy Team", "from_email": "strategy@example.com", "to": "sales@example.com", "cc": [],
+      "subject": "Platform evaluation and webinar", "body": "Please schedule a product demo for our INR 25L evaluation and discuss a webinar sponsorship.",
+      "received_at": "2026-08-08T09:00:00Z", "attachments": [], "is_reply": false
+    },
+    "expected": {"status": "created", "category": "triage", "assignee_id": "u_triage", "priority": "medium", "deal_value_inr": 2500000}
   }
 ]
