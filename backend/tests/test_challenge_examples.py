@@ -75,6 +75,22 @@ def test_smb_demo_routes_to_rohit():
     assert decision.assignee_id == "u_rohit"
 
 
+def test_company_is_extracted_from_an_explicit_signature():
+    message = email(
+        "Demo request",
+        "Could you schedule a demo sometime next week?\n— Ankit Bose, Founder, Railyard Logistics",
+    )
+    extraction = HeuristicExtractor().extract(message)
+    assert extraction.company_name == "Railyard Logistics"
+
+
+def test_company_like_sender_name_is_used_without_domain_inference():
+    message = email("Invoice overdue", "Please resolve this overdue invoice payment.")
+    message.from_name = "Vantage Cloud Services"
+    extraction = HeuristicExtractor().extract(message)
+    assert extraction.company_name == "Vantage Cloud Services"
+
+
 def test_sponsorship_price_remains_pipeline_value():
     message = email(
         "Webinar sponsorship",
@@ -85,6 +101,39 @@ def test_sponsorship_price_remains_pipeline_value():
     assert extraction.company_name == "Growth Collective"
     assert extraction.deal_value_inr == 400_000
     assert decision.assignee_id == "u_meera"
+
+
+def test_high_value_sponsorship_still_routes_to_marketing():
+    message = email(
+        "Conference sponsorship",
+        "Company: Growth Collective. We would like the INR 15,00,000 sponsorship package.",
+    )
+    extraction = HeuristicExtractor().extract(message)
+    decision = route_extraction(extraction, message.received_at)
+    assert extraction.deal_value_inr == 1_500_000
+    assert (decision.assignee_id, decision.category) == ("u_meera", "marketing")
+
+
+def test_high_value_reseller_still_routes_to_alliances():
+    message = email(
+        "Reseller partnership",
+        "Company: Zenith Cloud Partners. Could we discuss a reseller partnership priced at INR 20L?",
+    )
+    extraction = HeuristicExtractor().extract(message)
+    decision = route_extraction(extraction, message.received_at)
+    assert extraction.deal_value_inr == 2_000_000
+    assert (decision.assignee_id, decision.category) == ("u_karan", "alliances")
+
+
+def test_priced_competing_intents_remain_in_triage():
+    message = email(
+        "Platform evaluation and webinar",
+        "Please schedule a product demo for our INR 25L evaluation and discuss a webinar sponsorship.",
+    )
+    extraction = HeuristicExtractor().extract(message)
+    decision = route_extraction(extraction, message.received_at)
+    assert extraction.deal_value_inr == 2_500_000
+    assert (decision.assignee_id, decision.category) == ("u_triage", "triage")
 
 
 def test_overdue_invoice_is_high_but_not_pipeline_value():

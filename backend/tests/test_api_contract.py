@@ -69,6 +69,49 @@ def test_task_crud_contract(tmp_path):
     assert client.get("/tasks", params={"candidate_id": "cakhiltej9001@gmail.com"}).json() == []
 
 
+def test_candidate_plus_alias_is_one_identity(tmp_path):
+    client = _client(tmp_path)
+    payload = _task_payload()
+    payload["candidate_id"] = "cakhiltej9001+fde@gmail.com"
+    first = client.post("/tasks", json=payload)
+    assert first.status_code == 201
+    assert first.json()["candidate_id"] == "cakhiltej9001@gmail.com"
+
+    payload["candidate_id"] = "cakhiltej9001@gmail.com"
+    replay = client.post("/tasks", json=payload)
+    assert replay.status_code == 201
+    assert replay.json()["task_id"] == first.json()["task_id"]
+
+    listed = client.get("/tasks", params={"candidate_id": "cakhiltej9001+review@gmail.com"})
+    assert listed.status_code == 200
+    assert len(listed.json()) == 1
+
+
+def test_ingest_and_chat_share_canonical_candidate_identity(tmp_path):
+    client = _client(tmp_path)
+    payload = {
+        "candidate_id": "cakhiltej9001+ingest@gmail.com",
+        "emails": [{
+            "email_id": "alias-ingest-1", "thread_id": "alias-thread-1", "message_index": 0,
+            "from_name": "Buyer", "from_email": "buyer@example.com", "to": "sales@company.com", "cc": [],
+            "subject": "Product demo", "body": "Please schedule a demo. Budget INR 5L.",
+            "received_at": "2026-08-08T10:00:00Z", "attachments": [], "is_reply": False,
+        }],
+    }
+    assert client.post("/ingest", json=payload).json()["tasks_created"] == 1
+    stats = client.get("/api/stats", params={"candidate_id": "cakhiltej9001@gmail.com"}).json()
+    assert stats["processed"] == 1
+    chat = client.post(
+        "/api/chat",
+        json={
+            "candidate_id": "cakhiltej9001+chat@gmail.com",
+            "query": "How many RFPs are there?",
+            "email_ids": ["alias-ingest-1"],
+        },
+    ).json()
+    assert chat["supporting_data"]["enterprise_rfp"] == 0
+
+
 def test_ingest_is_synchronous_and_idempotent(tmp_path):
     client = _client(tmp_path)
     payload = {

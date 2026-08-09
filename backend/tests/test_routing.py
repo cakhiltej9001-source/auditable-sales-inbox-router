@@ -46,6 +46,20 @@ def test_business_category_routes():
     assert route_extraction(extraction("triage", confidence=0.4), RECEIVED).assignee_id == "u_triage"
 
 
+def test_non_sales_amounts_do_not_override_business_category():
+    marketing = route_extraction(extraction("marketing", deal_value_inr=1_500_000), RECEIVED)
+    alliances = route_extraction(extraction("alliances", deal_value_inr=2_000_000), RECEIVED)
+    ambiguous = route_extraction(extraction("triage", deal_value_inr=2_500_000, confidence=0.42), RECEIVED)
+    assert (marketing.assignee_id, marketing.category) == ("u_meera", "marketing")
+    assert (alliances.assignee_id, alliances.category) == ("u_karan", "alliances")
+    assert (ambiguous.assignee_id, ambiguous.category) == ("u_triage", "triage")
+
+
+def test_high_value_sales_enquiry_escalates_to_enterprise():
+    decision = route_extraction(extraction("smb_enquiry", deal_value_inr=1_500_000), RECEIVED)
+    assert (decision.assignee_id, decision.category) == ("u_aarti", "enterprise_rfp")
+
+
 def test_noise_is_skipped():
     decision = route_extraction(
         ExtractionResult(category="newsletter", is_actionable=False, summary="Weekly digest", confidence=0.9),
