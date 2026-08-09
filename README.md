@@ -24,7 +24,7 @@ On Windows, copy `.env.example` to `.env` in Explorer or use `Copy-Item .env.exa
 
 1. Accepts the exact inbox schema through synchronous `POST /ingest` in batches of at most 100.
 2. Strips HTML and quoted reply history, rejects obvious noise, then uses Gemini structured output or a deterministic fallback extractor.
-3. Applies fixed precedence in Python: government/PSU → enterprise value → finance → marketing → alliances → SMB → triage.
+3. Applies fixed precedence in Python: government/PSU override → Finance/Marketing/Alliances intent → ambiguity → enterprise sales threshold → SMB.
 4. Writes through one shared task persistence service and stores an audit row in PostgreSQL. Replayed `email_id` values are ignored; new messages on an existing thread merge into its task without erasing previously supported facts.
 5. Serves aggregate and conversational answers from stored classifications rather than asking a model to invent numbers.
 
@@ -80,7 +80,7 @@ cd backend
 python ../eval/eval.py
 ```
 
-The checked-in evaluator currently runs 69 deterministic cases, including nine challenge-trap cases. `EVALS.md` clearly separates these regression fixtures from the unavailable original `inbox.json` corpus.
+The checked-in evaluator currently runs 72 deterministic cases, including twelve challenge-trap cases. `EVALS.md` clearly separates these regression fixtures from the unavailable original `inbox.json` corpus.
 
 ## Environment and deployment
 

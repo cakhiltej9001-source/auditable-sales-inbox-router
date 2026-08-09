@@ -8,7 +8,7 @@ With two more weeks, I would add a token-budgeted request queue, provider teleme
 
 ## 2. Idempotency uses an immutable email identity
 
-`ProcessedEmail.source_email_id` is unique within a candidate. A replay increments audit metadata and returns a duplicate result without another task write. Tasks also use a stable thread-derived ID during ingest, while direct `POST /tasks` and ingestion share one task-write service.
+`ProcessedEmail.source_email_id` is unique within a canonical candidate identity. Candidate IDs are trimmed, lowercased, and stripped of `+alias` tags on every read and write, so an alias cannot create a second task namespace. A replay increments audit metadata and returns a duplicate result without another task write. Tasks also use a stable thread-derived ID during ingest, while direct `POST /tasks` and ingestion share one task-write service.
 
 With two more weeks, I would add PostgreSQL advisory locks or transactional upserts to make simultaneous delivery of the same message safe across multiple workers.
 
@@ -26,6 +26,6 @@ With two more weeks, I would formalize the intent grammar, add a read-only analy
 
 ## 5. Known limitation knowingly shipped
 
-The fallback parser handles Indian comma currency, lakh/crore units, ISO/numeric/ordinal dates, and explicit company labels, but it still misses word-number values such as “ten lakhs,” informal deadlines such as “next working Friday,” and implicit company mentions. Returning null or medium/low confidence is safer than fabricating a value or date.
+The fallback parser handles Indian comma currency, lakh/crore units, ISO/numeric/ordinal dates, explicit company labels, clear signature companies, and organization-like sender names, but it still misses word-number values such as “ten lakhs,” informal deadlines such as “next working Friday,” and implicit company mentions. Returning null or medium/low confidence is safer than fabricating a value or date.
 
 With two more weeks, I would add a locale-aware word-number/date parser, more multilingual fixtures, and calibrated confidence based on held-out data rather than fixed heuristic bands.
